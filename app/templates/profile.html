@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Profile · SeedBridge{% endblock %}
+{% block page %}profile{% endblock %}
+{% block content %}
+<div class="wizard">
+  <form method="post" action="/profile" enctype="multipart/form-data" class="glass card" data-pop>
+    <div class="profile-card" style="margin-bottom:22px">
+      <img class="avatar xl {{ 'square' if me.role == 'sponsor' }}" src="/u/{{ me.id }}/avatar?{{ range(1000) | random }}" alt="" data-avatar-preview>
+      <div>
+        <h1 style="margin:0">{{ me.name }}</h1>
+        <p class="muted" style="margin:0">{{ me.email }} · {{ 'Founder' if me.role == 'founder' else 'Funder' }}</p>
+        <label class="btn btn-ghost btn-small" style="margin:12px 0 0;display:inline-flex">{{ 'Change logo' if me.role == 'sponsor' else 'Change photo' }}
+          <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" hidden data-avatar-input></label>
+        {% if me.avatar_path %}<label class="check" style="margin:12px 0 0 6px"><input type="checkbox" name="remove_photo"> Remove</label>{% endif %}
+      </div>
+    </div>
+    <div class="row-2">
+      <label>Name<input name="name" required value="{{ me.name }}" autocomplete="name"></label>
+      <label>{{ 'Organisation' if me.role == 'sponsor' else 'Company' }}<input name="org" value="{{ me.org or '' }}" autocomplete="organization"></label>
+    </div>
+    <label>{{ 'About your organisation' if me.role == 'sponsor' else 'About you' }}<textarea name="bio" rows="3">{{ me.bio or '' }}</textarea></label>
+    <label>Website<input name="website" type="url" value="{{ me.website or '' }}" placeholder="https://"></label>
+    <button class="btn">Save profile</button>
+  </form>
+</div>
+{% endblock %}

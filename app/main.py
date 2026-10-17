@@ -1,10 +1,12 @@
 """SeedBridge web app: founders submit ideas, Nemotron models review and match them, sponsors list programs."""
+import hashlib
 import json
 import uuid
+from html import escape
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -21,13 +23,34 @@ templates.env.filters["loads"] = lambda v, d=None: db.loads(v, d)
 templates.env.filters["money"] = lambda v: f"${int(v):,}" if v not in (None, "") else "—"
 
 STEP_LABELS = {
-    "intake": "Structure the application", "gaps": "Find missing information",
-    "vision": "Read pitch-deck slide", "review": "Investor-readiness review",
-    "embed": "Semantic embedding", "match": "Rank sponsor matches", "draft": "Draft application",
+    "intake": "Structure the application", "research": "Web research (Tavily)",
+    "summarise": "Summarise market research", "retrieve": "Retrieve guidance (RAG)",
+    "gaps": "Find missing information", "vision": "Read pitch-deck slide",
+    "review": "Investor-readiness review", "embed": "Semantic embedding",
+    "match": "Rank sponsor matches", "draft": "Draft application",
 }
-templates.env.globals.update(config=config, STEP_LABELS=STEP_LABELS)
+# What founders see while the AI works: plain language, no model names.
+FRIENDLY_STEPS = [
+    ("intake", "Reading your idea"),
+    ("research", "Researching your market"),
+    ("gaps", "Checking what funders will ask"),
+    ("vision", "Reading your pitch slide"),
+    ("review", "Scoring your readiness"),
+    ("match", "Finding funders who fit"),
+]
+templates.env.globals.update(config=config, STEP_LABELS=STEP_LABELS, FRIENDLY_STEPS=FRIENDLY_STEPS,
+                             research_enabled=bool(config.TAVILY_API_KEY))
 
 db.init()
+
+
+@app.on_event("startup")
+def _seed_on_start():
+    """Hosted demo: fill an empty database with the demo accounts so visitors land on a live app."""
+    import os, runpy, threading
+    if os.getenv("SEEDBRIDGE_SEED_ON_START") == "1" and not db.one("SELECT id FROM users LIMIT 1"):
+        seed = str(config.ROOT / "scripts" / "seed.py")
+        threading.Thread(target=lambda: runpy.run_path(seed, run_name="__main__"), daemon=True).start()
 
 
 @app.exception_handler(auth.LoginRequired)
@@ -126,7 +149,7 @@ def dashboard(request: Request):
 
 # ---------------------------------------------------------------- founders
 
-IDEA_FIELDS = ["title", "one_liner", "problem", "solution", "sector", "stage", "country",
+IDEA_FIELDS = ["title", "one_liner", "problem", "solution", "sector", "stage", "product_status", "country",
                "business_model", "team", "traction", "use_of_funds"]
 
 
@@ -208,12 +231,23 @@ def idea_view(request: Request, idea_id: int):
     user = auth.require(request, "founder")
     idea = _own_idea(user, idea_id)
     matches = db.all_(
-        "SELECT m.*, p.name, p.kind, p.min_usd, p.max_usd, p.deadline, u.org AS sponsor_org, u.name AS sponsor_name,"
+        "SELECT m.*, p.name, p.kind, p.min_usd, p.max_usd, p.deadline, p.sponsor_id, u.org AS sponsor_org, u.name AS sponsor_name,"
         " a.id AS application_id, a.status AS application_status"
         " FROM matches m JOIN programs p ON p.id=m.program_id JOIN users u ON u.id=p.sponsor_id"
         " LEFT JOIN applications a ON a.idea_id=m.idea_id AND a.program_id=m.program_id"
         " WHERE m.idea_id=? ORDER BY m.fit_score DESC", idea_id)
     return render(request, "idea.html", idea=idea, matches=matches, steps=_steps(idea_id))
+
+
+@app.get("/ideas/{idea_id}/trace", response_class=HTMLResponse)
+def idea_trace(request: Request, idea_id: int):
+    """Behind-the-scenes view of every model call (linked from the README for judges, not the UI)."""
+    user = auth.require(request, "founder")
+    idea = _own_idea(user, idea_id)
+    apps = db.all_("SELECT id FROM applications WHERE idea_id=?", idea_id)
+    steps = _steps(idea_id) + [s for a in apps for s in _steps(idea_id, a["id"])]
+    chunks = db.one("SELECT COUNT(*) n FROM kb_chunks WHERE embedding_json IS NOT NULL")["n"]
+    return render(request, "trace.html", idea=idea, steps=steps, kb_chunks=chunks)
 
 
 @app.get("/ideas/{idea_id}/status")
@@ -351,11 +385,13 @@ def program_view(request: Request, pid: int):
     user = auth.require(request, "sponsor")
     p = _own_program(user, pid)
     matches = db.all_(
-        "SELECT m.*, i.title, i.one_liner, i.sector, i.stage, i.country, i.ask_usd, i.review_json"
-        " FROM matches m JOIN ideas i ON i.id=m.idea_id WHERE m.program_id=? AND i.share=1"
+        "SELECT m.*, i.title, i.one_liner, i.sector, i.stage, i.country, i.ask_usd, i.review_json,"
+        " i.user_id AS founder_id, f.name AS founder_name"
+        " FROM matches m JOIN ideas i ON i.id=m.idea_id JOIN users f ON f.id=i.user_id"
+        " WHERE m.program_id=? AND i.share=1"
         " ORDER BY m.fit_score DESC", pid)
     apps = db.all_(
-        "SELECT a.*, i.title FROM applications a JOIN ideas i ON i.id=a.idea_id"
+        "SELECT a.*, i.title, i.user_id AS founder_id FROM applications a JOIN ideas i ON i.id=a.idea_id"
         " WHERE a.program_id=? AND a.status NOT IN ('drafting','draft','error') ORDER BY a.updated_at DESC", pid)
     return render(request, "program.html", p=p, matches=matches, apps=apps)
 
@@ -371,3 +407,64 @@ def program_idea(request: Request, pid: int, idea_id: int):
     if not idea or not match:
         raise HTTPException(404)
     return render(request, "sponsor_idea.html", p=p, idea=idea, match=match)
+
+
+# ---------------------------------------------------------------- profiles and avatars
+
+AVATAR_COLOURS = [("#34d399", "#0e7490"), ("#60a5fa", "#4f46e5"), ("#f472b6", "#be185d"),
+                  ("#fbbf24", "#ea580c"), ("#a78bfa", "#6d28d9"), ("#2dd4bf", "#0f766e")]
+
+
+@app.get("/u/{uid}/avatar")
+def avatar(uid: int):
+    row = db.one("SELECT name, org, role, avatar_path FROM users WHERE id=?", uid)
+    if not row:
+        raise HTTPException(404)
+    path = row["avatar_path"]
+    if path and path.startswith("/static/"):
+        return RedirectResponse(path, status_code=302)
+    if path and Path(path).exists():
+        return FileResponse(path, headers={"Cache-Control": "private, max-age=300"})
+    label = (row["org"] if row["role"] == "sponsor" and row["org"] else row["name"]) or "?"
+    initials = "".join(w[0] for w in label.split()[:2]).upper()
+    a, b = AVATAR_COLOURS[int(hashlib.md5(label.encode()).hexdigest(), 16) % len(AVATAR_COLOURS)]
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" '
+           f'x2="1" y2="1"><stop offset="0" stop-color="{a}"/><stop offset="1" stop-color="{b}"/></linearGradient>'
+           f'</defs><rect width="96" height="96" fill="url(#g)"/><text x="48" y="58" text-anchor="middle" '
+           f'font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="34" font-weight="700" fill="#fff">'
+           f'{escape(initials)}</text></svg>')
+    return Response(svg, media_type="image/svg+xml", headers={"Cache-Control": "private, max-age=300"})
+
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile_form(request: Request):
+    user = auth.require(request)
+    full = db.one("SELECT id, email, name, role, org, bio, website, avatar_path FROM users WHERE id=?", user["id"])
+    return render(request, "profile.html", me=full)
+
+
+@app.post("/profile")
+async def profile_save(request: Request):
+    user = auth.require(request)
+    form = await request.form()
+    name = (form.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Name is required.")
+    photo = form.get("photo")
+    avatar_path = None
+    if hasattr(photo, "filename") and photo.filename:
+        ext = Path(photo.filename).suffix.lower()
+        if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+            raise HTTPException(400, "Upload a PNG, JPG or WebP photo.")
+        data = await photo.read()
+        if len(data) > 3 * 1024 * 1024:
+            raise HTTPException(400, "Photo must be under 3 MB.")
+        target = config.UPLOAD_DIR / f"avatar-{user['id']}-{uuid.uuid4().hex[:8]}{ext}"
+        target.write_bytes(data)
+        avatar_path = str(target)
+    db.run("UPDATE users SET name=?, org=?, bio=?, website=?, avatar_path=COALESCE(?, avatar_path) WHERE id=?",
+           name, (form.get("org") or "").strip() or None, (form.get("bio") or "").strip() or None,
+           (form.get("website") or "").strip() or None, avatar_path, user["id"])
+    if form.get("remove_photo"):
+        db.run("UPDATE users SET avatar_path=NULL WHERE id=?", user["id"])
+    return back("/profile", "Profile saved.", request)

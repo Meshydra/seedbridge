@@ -1,29 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Your programs · SeedBridge{% endblock %}
+{% block title %}My programs · SeedBridge{% endblock %}
+{% block page %}dashboard{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h1>Your programs</h1>
-  <a class="btn" href="/programs/new">New program</a>
-</div>
-{% if not programs %}
-  <div class="card empty">
-    <p>Publish a grant, fund, prize or accelerator. Every founder idea is scored against it, and you get a ranked shortlist.</p>
-    <a class="btn" href="/programs/new">Publish your first program</a>
-  </div>
-{% else %}
-<div class="list">
-  {% for p in programs %}
-  <a class="card list-item" href="/programs/{{ p.id }}">
+<div class="page-head" data-reveal>
+  <div class="idea-head">
+    <img class="avatar lg square" src="/u/{{ user.id }}/avatar" alt="">
     <div>
-      <h3>{{ p.name }}</h3>
-      <p class="muted">{{ p.kind }} · {{ p.min_usd | money }}–{{ p.max_usd | money }}{% if p.deadline %} · closes {{ p.deadline }}{% endif %}</p>
+      <p class="eyebrow">{{ user.org or 'Funder' }}</p>
+      <h1>Your programs</h1>
     </div>
-    <div class="list-stats">
-      <div class="stat"><b>{{ p.strong }}</b><span>strong matches</span></div>
-      <div class="stat"><b>{{ p.apps }}</b><span>applications</span></div>
+  </div>
+</div>
+<div class="idea-grid" data-stagger>
+  {% for p in programs %}
+  <a class="idea-card glass" href="/programs/{{ p.id }}" data-lift>
+    <div class="chips" style="margin-top:0"><span class="chip brand">{{ p.kind }}</span>{% if p.deadline %}<span class="chip">Closes {{ p.deadline }}</span>{% endif %}</div>
+    <h3 style="font-size:1.15rem;margin-top:6px">{{ p.name }}</h3>
+    <p>{{ p.min_usd | money }} – {{ p.max_usd | money }}</p>
+    <div class="foot">
+      <div class="kpi"><b>{{ p.strong }}</b><span>strong matches</span></div>
+      <div class="kpi" style="text-align:right"><b>{{ p.apps }}</b><span>applications</span></div>
     </div>
   </a>
   {% endfor %}
+  <a class="idea-card new-card" href="/programs/new" data-lift>
+    <div><div class="plus">+</div>{{ 'List another program' if programs else 'List your first program' }}</div>
+  </a>
 </div>
-{% endif %}
 {% endblock %}

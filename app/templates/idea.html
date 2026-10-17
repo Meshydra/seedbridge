@@ -1,102 +1,112 @@
 {% extends "base.html" %}
 {% block title %}{{ idea.title }} · SeedBridge{% endblock %}
+{% block page %}idea{% endblock %}
 {% block content %}
 {% set profile = idea.profile_json | loads({}) %}
 {% set gaps = idea.gaps_json | loads({}) %}
 {% set deck = idea.deck_json | loads(none) %}
 {% set review = idea.review_json | loads({}) %}
-<div class="page-head">
+{% set market = idea.research_json | loads(none) %}
+<div class="page-head" data-reveal>
   <div>
-    <p class="eyebrow"><a href="/dashboard">Your ideas</a></p>
+    <p class="eyebrow"><a href="/dashboard">My ideas</a></p>
     <h1>{{ idea.title }}</h1>
-    <p class="muted">{{ idea.one_liner or '' }}</p>
-    <p class="tags"><span class="tag">{{ idea.sector }}</span><span class="tag">{{ idea.stage }}</span><span class="tag">{{ idea.country }}</span><span class="tag">Ask {{ idea.ask_usd | money }}</span></p>
+    <p class="muted" style="margin:0">{{ idea.one_liner or '' }}</p>
+    <div class="chips"><span class="chip brand">{{ idea.stage }}</span><span class="chip">{{ idea.product_status or 'Product status not set' }}</span><span class="chip">{{ idea.sector }}</span><span class="chip">{{ idea.country }}</span><span class="chip">Asking {{ idea.ask_usd | money }}</span></div>
   </div>
   <div class="actions">
-    <a class="btn btn-ghost" href="/ideas/{{ idea.id }}/edit">Edit</a>
-    <form method="post" action="/ideas/{{ idea.id }}/share" class="inline"><button class="btn btn-ghost">{{ 'Hide from sponsors' if idea.share else 'Share with sponsors' }}</button></form>
+    <a class="btn btn-ghost btn-small" href="/ideas/{{ idea.id }}/edit">Edit idea</a>
+    <form method="post" action="/ideas/{{ idea.id }}/share" class="inline"><button class="btn btn-ghost btn-small">{{ 'Hide from funders' if idea.share else 'Show to funders' }}</button></form>
   </div>
 </div>
 
 {% if idea.status in ('pending', 'running') %}
-<div class="card progress" data-poll="/ideas/{{ idea.id }}/status">
-  <h2>The models are reviewing your idea</h2>
-  <ol class="steps">
-    {% for key in ['intake', 'gaps'] + (['vision'] if idea.deck_path else []) + ['review', 'embed', 'match'] %}
-    {% set done = steps | selectattr('step', 'equalto', key) | list %}
-    <li data-step="{{ key }}" class="{{ 'done' if done }}"><span>{{ STEP_LABELS[key] }}</span><code>{{ config.MODELS[key] }}</code></li>
+<section class="glass card processing" data-poll="/ideas/{{ idea.id }}/status" data-pop>
+  <div class="orb" data-orb><img src="/static/brand/mark.svg" alt=""></div>
+  <h2>We're reviewing {{ idea.title }}</h2>
+  <p class="muted">This usually takes under a minute. You can leave this page; we'll keep working.</p>
+  <ol class="psteps">
+    {% for key, label in FRIENDLY_STEPS if (key != 'vision' or idea.deck_path) and (key != 'research' or research_enabled) %}
+    <li data-step="{{ key }}"><span class="tick"></span>{{ label }}</li>
     {% endfor %}
   </ol>
-</div>
+</section>
 {% elif idea.status == 'error' %}
-<div class="card error-card">
-  <h2>The review stopped part-way</h2>
-  <p>One model call failed; the details are in the table below. Results from steps that finished are kept.</p>
+<section class="glass card" data-pop>
+  <h2>Something interrupted the review</h2>
+  <p class="muted">It's usually temporary. Anything that finished is saved below.</p>
   <form method="post" action="/ideas/{{ idea.id }}/rerun"><button class="btn">Try again</button></form>
-</div>
-{% endif %}
-
-{% if review %}<section class="card">{% include "_review.html" %}</section>{% endif %}
-
-{% if gaps %}
-<section class="card">
-  <div class="section-head"><h2>What a panel will ask</h2><span class="pill">{{ gaps.completeness }}% complete</span></div>
-  {% if gaps.missing %}
-  <ul class="gaps">{% for m in gaps.missing %}<li><b>{{ m.field }}</b> {{ m.why }}</li>{% endfor %}</ul>
-  {% endif %}
-  {% if gaps.questions %}<h3>Have answers ready for</h3><ol>{% for q in gaps.questions %}<li>{{ q }}</li>{% endfor %}</ol>{% endif %}
-  <a class="btn btn-ghost" href="/ideas/{{ idea.id }}/edit">Improve the application</a>
 </section>
 {% endif %}
 
+{% if review %}<section class="glass card" data-reveal>{% include "_review.html" %}</section>{% endif %}
+
 {% if idea.status == 'done' %}
-<section class="card">
-  <div class="section-head"><h2>Programs that fit</h2><span class="muted small">{{ 'Visible to these sponsors' if idea.share else 'Hidden from sponsors' }}</span></div>
+<section class="glass card" data-reveal>
+  <div class="section-head">
+    <div><h2 style="margin:0">Funders that fit</h2><p class="muted small" style="margin:0">{{ 'Matched funders can see your idea.' if idea.share else 'Your idea is hidden from funders.' }}</p></div>
+  </div>
   {% if matches %}
-  <div class="matches">
+  <div data-stagger>
     {% for m in matches %}
     {% set concerns = m.concerns | loads([]) %}
-    <div class="match {{ 'weak' if m.fit_score < 50 }}">
-      <div class="fit"><b>{{ m.fit_score }}</b><span>fit</span></div>
-      <div class="match-body">
+    <div class="match {{ 'weak' if m.fit_score < 35 }}">
+      {% with score = m.fit_score %}{% include "_fit.html" %}{% endwith %}
+      <div>
         <h3>{{ m.name }}</h3>
-        <p class="small muted">{{ m.kind }} · {{ m.sponsor_org or m.sponsor_name }} · {{ m.min_usd | money }}–{{ m.max_usd | money }}{% if m.deadline %} · closes {{ m.deadline }}{% endif %}</p>
+        <div class="who-row"><img class="avatar sm" src="/u/{{ m.sponsor_id }}/avatar" alt="">{{ m.sponsor_org or m.sponsor_name }} · {{ m.kind }} · {{ m.min_usd | money }}–{{ m.max_usd | money }}{% if m.deadline %} · closes {{ m.deadline }}{% endif %}</div>
         <p>{{ m.reason }}</p>
-        {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+        {% if concerns %}<div class="concerns">{% for c in concerns %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
       </div>
       <div class="match-act">
         {% if m.application_id %}
-          <a class="btn btn-ghost btn-small" href="/applications/{{ m.application_id }}">{{ m.application_status | replace('_', ' ') | capitalize }}</a>
+          <a class="btn btn-ghost btn-small" href="/applications/{{ m.application_id }}">{{ {'drafting': 'Drafting…', 'draft': 'Continue draft', 'submitted': 'Sent', 'shortlisted': 'Shortlisted', 'intro': 'Intro requested', 'declined': 'Declined', 'error': 'Retry draft'}.get(m.application_status, 'Open') }}</a>
         {% else %}
-          <form method="post" action="/ideas/{{ idea.id }}/apply/{{ m.program_id }}"><button class="btn btn-small">Draft application</button></form>
+          <form method="post" action="/ideas/{{ idea.id }}/apply/{{ m.program_id }}"><button class="btn btn-small">Write my application</button></form>
         {% endif %}
       </div>
     </div>
     {% endfor %}
   </div>
-  {% else %}<p class="muted">No sponsor programs yet. You'll be matched automatically when sponsors publish one.</p>{% endif %}
+  {% else %}<p class="muted">No funders have listed a program yet. We'll match you automatically when they do.</p>{% endif %}
 </section>
 {% endif %}
 
-{% if profile %}
-<section class="card">
-  <h2>How the models read your idea</h2>
-  <p>{{ profile.summary }}</p>
-  <dl class="kv">
-    <dt>Customer</dt><dd>{{ profile.customer }}</dd>
-    <dt>Business model</dt><dd>{{ profile.business_model }}</dd>
-    {% if profile.keywords %}<dt>Keywords</dt><dd class="tags">{% for k in profile.keywords %}<span class="tag">{{ k }}</span>{% endfor %}</dd>{% endif %}
-    {% if profile.red_flags %}<dt>Red flags</dt><dd><ul class="concerns">{% for f in profile.red_flags %}<li>{{ f }}</li>{% endfor %}</ul></dd>{% endif %}
-  </dl>
-  {% if deck %}
-  <h3>Pitch-deck slide</h3>
-  <p>{{ deck.slide_summary }}</p>
-  {% if deck.numbers %}<ul>{% for n in deck.numbers %}<li>{{ n.label }}: <b>{{ n.value }}</b></li>{% endfor %}</ul>{% endif %}
-  <p class="small muted">Consistency with your written answers: {{ deck.consistency }}</p>
+<div class="grid cols-2">
+  {% if gaps %}
+  <section class="glass card" data-reveal>
+    <div class="section-head"><h2 style="margin:0">What a panel will ask</h2><span class="chip {{ 'brand' if gaps.completeness >= 70 else 'warn' }}">{{ gaps.completeness }}% complete</span></div>
+    {% if gaps.questions %}
+    <ol class="todo">{% for q in gaps.questions %}<li><span class="n">{{ loop.index }}</span><span>{{ q }}</span></li>{% endfor %}</ol>
+    {% endif %}
+    {% if gaps.missing %}
+    <h3 style="margin-top:18px">Worth adding</h3>
+    <ul style="padding-left:18px;margin:0">{% for m in gaps.missing %}<li><b>{{ m.field }}:</b> <span class="muted">{{ m.why }}</span></li>{% endfor %}</ul>
+    {% endif %}
+    <a class="btn btn-ghost btn-small" style="margin-top:16px" href="/ideas/{{ idea.id }}/edit">Improve my answers</a>
+  </section>
   {% endif %}
-</section>
-{% endif %}
 
-{% set open_trace = idea.status == 'error' %}
-{% include "_trace.html" %}
+  <section class="glass card" data-reveal>
+    {% if market %}
+      <h2>Your market</h2>
+      <p>{{ market.snapshot }}</p>
+      {% if market.market_size and market.market_size != 'not found' %}<p><b>Market size:</b> {{ market.market_size }}</p>{% endif %}
+      {% if market.competitors %}<h3>Who else is out there</h3><ul style="padding-left:18px">{% for c in market.competitors %}<li><b>{% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.name }}</a>{% else %}{{ c.name }}{% endif %}</b>: <span class="muted">{{ c.note }}</span></li>{% endfor %}</ul>{% endif %}
+      {% if market.sources %}<div class="sources"><p class="faint small" style="margin:10px 0 2px">Sources</p>{% for s in market.sources[:5] %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a>{% endfor %}</div>{% endif %}
+    {% elif profile %}
+      <h2>How we read your idea</h2>
+      <p>{{ profile.summary }}</p>
+      <dl class="kv">
+        <dt>Who pays</dt><dd>{{ profile.customer }}</dd>
+        {% if profile.red_flags %}<dt>Watch out for</dt><dd><div class="concerns" style="margin:0">{% for f in profile.red_flags %}<span class="chip warn">{{ f }}</span>{% endfor %}</div></dd>{% endif %}
+      </dl>
+    {% endif %}
+    {% if deck %}
+      <h3 style="margin-top:18px">Your pitch slide</h3>
+      <p class="muted">{{ deck.slide_summary }}</p>
+      {% if deck.numbers %}<ul>{% for n in deck.numbers %}<li>{{ n.label }}: <b>{{ n.value }}</b></li>{% endfor %}</ul>{% endif %}
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

@@ -1,25 +1,33 @@
-{# Readiness scorecard; shared by the founder view and the sponsor view. Needs `review`. #}
+{# Readiness scorecard; shared by the founder view and the funder view. Needs `review`. #}
 {% if review %}
-<div class="score-head">
-  <div class="score-ring" style="--v: {{ review.overall or 0 }}"><b>{{ review.overall }}</b><span>/ 100</span></div>
+<div class="score">
+  <div class="ring" data-ring="{{ review.overall or 0 }}">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <defs><linearGradient id="ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(15,23,42,.07)" stroke-width="11"/>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="url(#ring-g)" stroke-width="11" stroke-linecap="round"
+        pathLength="100" stroke-dasharray="100" stroke-dashoffset="{{ 100 - (review.overall or 0) }}" data-ring-arc/>
+    </svg>
+    <div class="val"><b data-count="{{ review.overall or 0 }}">{{ review.overall }}</b><span>READINESS</span></div>
+  </div>
   <div>
-    <h2>Investor readiness</h2>
-    <p>{{ review.verdict }}</p>
-    {% if review.best_fit %}<p class="tags">Best suited now: {% for k in review.best_fit %}<span class="tag">{{ k }}</span>{% endfor %}</p>{% endif %}
+    <h2 style="font-size:1.5rem">{{ review.verdict }}</h2>
+    {% if review.best_fit %}<p class="muted" style="margin:0">Best suited right now</p><div class="chips">{% for k in review.best_fit %}<span class="chip brand">{{ k }}</span>{% endfor %}</div>{% endif %}
   </div>
 </div>
 <div class="dims">
   {% for d in review.dimensions or [] %}
   <div class="dim">
-    <div class="dim-top"><span>{{ d.name }}</span><b>{{ d.score }}/10</b></div>
-    <div class="bar"><i style="width: {{ (d.score or 0) * 10 }}%"></i></div>
-    <p class="small muted">{{ d.comment }}</p>
+    <div class="dim-top"><span>{{ d.name }}</span><span>{{ d.score }}/10</span></div>
+    <div class="bar"><i style="width: {{ (d.score or 0) * 10 }}%" data-bar></i></div>
+    <p>{{ d.comment }}</p>
   </div>
   {% endfor %}
 </div>
-<div class="grid-3 tight">
-  <div><h3>Strengths</h3><ul>{% for s in review.strengths or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
-  <div><h3>Risks</h3><ul>{% for s in review.risks or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
-  <div><h3>Fix these first</h3><ol>{% for s in review.improvements or [] %}<li>{{ s }}</li>{% endfor %}</ol></div>
+<div class="lists">
+  <div class="list-box"><h3><span class="dot" style="background:#10b981"></span>Strengths</h3><ul>{% for s in review.strengths or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  <div class="list-box"><h3><span class="dot" style="background:#f59e0b"></span>Risks</h3><ul>{% for s in review.risks or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  <div class="list-box"><h3><span class="dot" style="background:#0e7490"></span>Fix these first</h3><ol>{% for s in review.improvements or [] %}<li>{{ s }}</li>{% endfor %}</ol></div>
 </div>
+{% if review.based_on %}<p class="based-on">Judged against: {{ review.based_on | join(' · ') }}</p>{% endif %}
 {% endif %}

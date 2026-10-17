@@ -1,44 +1,82 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Edit idea' if idea.id else 'New idea' }} · SeedBridge{% endblock %}
+{% block page %}wizard{% endblock %}
 {% block content %}
-<h1>{{ 'Edit your idea' if idea.id else 'Describe your business idea' }}</h1>
-<p class="muted">Plain language is fine. Numbers help most: customers, prices, pilots, revenue. Leave a field blank rather than guess; the review will tell you what matters.</p>
-<form method="post" action="{{ action }}" enctype="multipart/form-data" class="card form">
-  <fieldset>
-    <legend>The basics</legend>
-    <label>Name of the idea or business<input name="title" required value="{{ idea.title or '' }}"></label>
-    <label>One-line pitch<input name="one_liner" maxlength="200" placeholder="" value="{{ idea.one_liner or '' }}">
-      <span class="hint">What you do, for whom, in one sentence.</span></label>
-    <div class="row-3">
-      <label>Sector<select name="sector">{% for s in config.SECTORS %}<option {{ 'selected' if idea.sector == s }}>{{ s }}</option>{% endfor %}</select></label>
-      <label>Stage<select name="stage">{% for s in config.STAGES %}<option {{ 'selected' if idea.stage == s }}>{{ s }}</option>{% endfor %}</select></label>
-      <label>Country<input name="country" value="{{ idea.country or '' }}" required></label>
+<div class="wizard">
+  <div class="wizard-head" data-reveal>
+    <div>
+      <p class="eyebrow">{{ 'Edit your idea' if idea.id else 'New idea' }}</p>
+      <h1>{{ 'Update your idea' if idea.id else "Let's hear about your idea" }}</h1>
     </div>
-  </fieldset>
-  <fieldset>
-    <legend>Problem and solution</legend>
-    <label>The problem<textarea name="problem" rows="4">{{ idea.problem or '' }}</textarea>
-      <span class="hint">Who has it, how often, and what it costs them today.</span></label>
-    <label>Your solution<textarea name="solution" rows="4">{{ idea.solution or '' }}</textarea></label>
-    <label>Business model<textarea name="business_model" rows="2">{{ idea.business_model or '' }}</textarea>
-      <span class="hint">Who pays, how much, how often.</span></label>
-  </fieldset>
-  <fieldset>
-    <legend>Evidence</legend>
-    <label>Team<textarea name="team" rows="3">{{ idea.team or '' }}</textarea></label>
-    <label>Traction<textarea name="traction" rows="3">{{ idea.traction or '' }}</textarea>
-      <span class="hint">Pilots, sign-ups, letters of intent, revenue, awards.</span></label>
-  </fieldset>
-  <fieldset>
-    <legend>The ask</legend>
-    <div class="row-2">
-      <label>Funding needed (USD)<input name="ask_usd" inputmode="numeric" value="{{ idea.ask_usd or '' }}"></label>
-      <label>Key pitch-deck slide (optional)<input type="file" name="deck" accept="image/png,image/jpeg,image/webp">
-        <span class="hint">{% if idea.deck_path %}A slide is already attached; upload to replace it.{% else %}PNG or JPG, under 5 MB. Read by the vision model.{% endif %}</span></label>
+    <span class="chip" data-step-label>Step 1 of 5</span>
+  </div>
+  <div class="progress-track" aria-hidden="true"><i data-progress></i></div>
+
+  <form method="post" action="{{ action }}" enctype="multipart/form-data" class="glass card" data-wizard>
+    <section class="wstep on" data-wstep>
+      <h2>The basics</h2>
+      <p class="muted">Plain language is perfect. You can change any of this later.</p>
+      <label>What's it called?<input name="title" required value="{{ idea.title or '' }}" placeholder="e.g. PaddySense"></label>
+      <label>Describe it in one sentence<input name="one_liner" maxlength="200" value="{{ idea.one_liner or '' }}">
+        <span class="hint">What you do, for whom. For example: "SMS irrigation alerts for rice farmers."</span></label>
+      <div class="row-2">
+        <label>Sector<select name="sector">{% for s in config.SECTORS %}<option {{ 'selected' if idea.sector == s }}>{{ s }}</option>{% endfor %}</select></label>
+        <label>Country<input name="country" required value="{{ idea.country or '' }}" placeholder="e.g. Sri Lanka" autocomplete="country-name"></label>
+      </div>
+    </section>
+
+    <section class="wstep" data-wstep>
+      <h2>Where are you right now?</h2>
+      <p class="muted">This decides which funders you're eligible for, so pick the closest fit.</p>
+      <span class="checks label" style="display:block;font-weight:700;font-size:.92rem">Funding stage</span>
+      <div class="options">
+        {% for s in config.STAGES %}
+        <label class="option"><input type="radio" name="stage" value="{{ s }}" required {{ 'checked' if idea.stage == s or (not idea.stage and loop.first) }}>
+          <b>{{ s }}</b><span>{{ config.STAGE_HINTS[s] }}</span></label>
+        {% endfor %}
+      </div>
+      <span style="display:block;font-weight:700;font-size:.92rem">Is your product live?</span>
+      <div class="options">
+        {% for s in config.PRODUCT_STATUS %}
+        <label class="option"><input type="radio" name="product_status" value="{{ s }}" {{ 'checked' if idea.product_status == s or (not idea.product_status and loop.first) }}><b>{{ s }}</b></label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="wstep" data-wstep>
+      <h2>Problem and solution</h2>
+      <label>What problem are you solving?<textarea name="problem" rows="4">{{ idea.problem or '' }}</textarea>
+        <span class="hint">Who has it, how often, and what it costs them today. Numbers help.</span></label>
+      <label>How do you solve it?<textarea name="solution" rows="4">{{ idea.solution or '' }}</textarea></label>
+      <label>How will you make money?<textarea name="business_model" rows="2">{{ idea.business_model or '' }}</textarea>
+        <span class="hint">Who pays, how much, how often.</span></label>
+    </section>
+
+    <section class="wstep" data-wstep>
+      <h2>Team and traction</h2>
+      <label>Who's on the team?<textarea name="team" rows="3">{{ idea.team or '' }}</textarea>
+        <span class="hint">Names, roles and why you're the right people.</span></label>
+      <label>What progress have you made?<textarea name="traction" rows="3">{{ idea.traction or '' }}</textarea>
+        <span class="hint">Customers, pilots, sign-ups, revenue, awards. Leave it blank if you're just starting; that's fine.</span></label>
+    </section>
+
+    <section class="wstep" data-wstep>
+      <h2>Your ask</h2>
+      <div class="row-2">
+        <label>How much funding do you need? (USD)<input name="ask_usd" inputmode="numeric" value="{{ idea.ask_usd or '' }}" placeholder="e.g. 20,000"></label>
+        <label>Your best pitch slide (optional)<input type="file" name="deck" accept="image/png,image/jpeg,image/webp">
+          <span class="hint">{% if idea.deck_path %}One is attached already; upload to replace it.{% else %}PNG or JPG, under 5 MB.{% endif %}</span></label>
+      </div>
+      <label>What will the money pay for?<textarea name="use_of_funds" rows="3">{{ idea.use_of_funds or '' }}</textarea></label>
+      <label class="check" style="margin-top:4px"><input type="checkbox" name="share" {{ 'checked' if idea.share is not defined or idea.share }}> Let matched funders see my idea and review</label>
+    </section>
+
+    <div class="wizard-nav">
+      <button type="button" class="btn btn-ghost" data-prev hidden>Back</button>
+      <span></span>
+      <button type="button" class="btn" data-next>Continue</button>
+      <button class="btn" data-submit hidden>{{ 'Save and re-review' if idea.id else 'Review my idea' }}</button>
     </div>
-    <label>Use of funds<textarea name="use_of_funds" rows="3">{{ idea.use_of_funds or '' }}</textarea></label>
-  </fieldset>
-  <label class="check"><input type="checkbox" name="share" {{ 'checked' if idea.share is not defined or idea.share }}> Let matched sponsors see this idea and its review</label>
-  <button class="btn">{{ 'Save and re-review' if idea.id else 'Submit for review' }}</button>
-</form>
+  </form>
+</div>
 {% endblock %}

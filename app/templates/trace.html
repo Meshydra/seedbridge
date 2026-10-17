@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Behind the AI · {{ idea.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="/ideas/{{ idea.id }}">{{ idea.title }}</a></p>
+    <h1>Behind the AI</h1>
+    <p class="muted" style="margin:0">Every model call made for this idea: NVIDIA Nemotron models on Nebius Token Factory, Tavily web search and RAG over {{ kb_chunks }} knowledge-base sections.</p>
+  </div>
+</div>
+<section class="glass card scroll-x">
+  <table class="table">
+    <thead><tr><th>Step</th><th>Model</th><th class="num">Time</th><th class="num">Tokens in / out</th><th class="num">Cost (USD)</th><th></th></tr></thead>
+    <tbody>
+    {% set ns = namespace(total=0, ms=0) %}
+    {% for s in steps %}
+      {% set ns.total = ns.total + (s.cost_usd or 0) %}{% set ns.ms = ns.ms + (s.latency_ms or 0) %}
+      <tr>
+        <td>{{ STEP_LABELS.get(s.step, s.step) }}{% if s.application_id %} <span class="faint">(application)</span>{% endif %}</td>
+        <td><code>{{ s.model }}</code></td>
+        <td class="num">{{ '%.1f' % ((s.latency_ms or 0) / 1000) }} s</td>
+        <td class="num">{{ s.input_tokens or '' }}{% if s.output_tokens %} / {{ s.output_tokens }}{% endif %}</td>
+        <td class="num">{{ '%.5f' % s.cost_usd if s.cost_usd else '' }}</td>
+        <td>{% if s.status == 'error' %}<span class="chip bad" title="{{ s.error }}">failed</span>{% elif s.demo %}<span class="chip">simulated</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td colspan="2"><b>Total</b></td><td class="num"><b>{{ '%.1f' % (ns.ms / 1000) }} s</b></td><td></td><td class="num"><b>{{ '%.4f' % ns.total }}</b></td><td></td></tr></tfoot>
+  </table>
+  {% for s in steps if s.status == 'error' %}<p class="error small">{{ STEP_LABELS.get(s.step, s.step) }}: {{ s.error }}</p>{% endfor %}
+</section>
+{% endblock %}

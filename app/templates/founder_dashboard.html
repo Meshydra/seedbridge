@@ -1,35 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Your ideas · SeedBridge{% endblock %}
+{% block title %}My ideas · SeedBridge{% endblock %}
+{% block page %}dashboard{% endblock %}
 {% block content %}
-<div class="page-head">
-  <h1>Your ideas</h1>
-  <a class="btn" href="/ideas/new">New idea</a>
-</div>
-{% if not ideas %}
-  <div class="card empty">
-    <p>No ideas yet. Describe one and the models will review it and find programs that fit.</p>
-    <a class="btn" href="/ideas/new">Describe your first idea</a>
+<div class="page-head" data-reveal>
+  <div class="idea-head">
+    <img class="avatar lg" src="/u/{{ user.id }}/avatar" alt="">
+    <div>
+      <p class="eyebrow">Welcome back</p>
+      <h1>{{ user.name.split()[0] }}'s ideas</h1>
+    </div>
   </div>
-{% else %}
-<div class="list">
+</div>
+<div class="idea-grid" data-stagger>
   {% for i in ideas %}
   {% set review = i.review_json | loads({}) %}
-  <a class="card list-item" href="/ideas/{{ i.id }}">
-    <div>
-      <h3>{{ i.title }}</h3>
-      <p class="muted">{{ i.one_liner or '' }}</p>
-      <p class="tags"><span class="tag">{{ i.sector }}</span><span class="tag">{{ i.stage }}</span><span class="tag">{{ i.country }}</span></p>
-    </div>
-    <div class="list-stats">
-      {% if i.status in ('pending', 'running') %}<span class="pill pill-run">Reviewing…</span>
-      {% elif i.status == 'error' %}<span class="pill pill-bad">Review failed</span>
+  <a class="idea-card glass" href="/ideas/{{ i.id }}" data-lift>
+    <div class="chips" style="margin-top:0"><span class="chip brand">{{ i.stage }}</span><span class="chip">{{ i.sector }}</span></div>
+    <h3 style="font-size:1.15rem;margin-top:6px">{{ i.title }}</h3>
+    <p>{{ i.one_liner or '' }}</p>
+    <div class="foot">
+      {% if i.status in ('pending', 'running') %}<span class="chip warn">Reviewing…</span>
+      {% elif i.status == 'error' %}<span class="chip bad">Needs another try</span>
       {% else %}
-        {% if review.overall is defined %}<div class="stat"><b>{{ review.overall }}</b><span>readiness</span></div>{% endif %}
-        {% if i.n_matches %}<div class="stat"><b>{{ i.best_fit }}</b><span>best fit · {{ i.n_matches }} programs</span></div>{% endif %}
+        <div class="kpi"><b>{{ review.overall if review.overall is defined else '–' }}</b><span>readiness</span></div>
+        <div class="kpi" style="text-align:right"><b>{{ i.n_matches or 0 }}</b><span>funder matches</span></div>
       {% endif %}
     </div>
   </a>
   {% endfor %}
+  <a class="idea-card new-card" href="/ideas/new" data-lift>
+    <div><div class="plus">+</div>{{ 'Add another idea' if ideas else 'Describe your first idea' }}</div>
+  </a>
 </div>
-{% endif %}
 {% endblock %}

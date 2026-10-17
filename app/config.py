@@ -21,6 +21,8 @@ SECRET_KEY = os.getenv("SEEDBRIDGE_SECRET", "dev-only-change-me")
 NEBIUS_API_KEY = os.getenv("NEBIUS_API_KEY", "").strip()
 NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1").rstrip("/")
 
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
+
 # Demo mode: no key (or SEEDBRIDGE_DEMO=1) -> every model call is answered locally so the
 # whole app is clickable without credits. The UI shows a banner while this is on.
 DEMO_MODE = not NEBIUS_API_KEY or os.getenv("SEEDBRIDGE_DEMO") == "1"
@@ -53,7 +55,16 @@ PRICES = {
     "Qwen/Qwen3-Embedding-8B": (0.01, 0.0),
 }
 
-STAGES = ["Idea", "Prototype", "MVP", "Early revenue", "Growth"]
+# Where the business is on its funding journey (asked on every idea, used for eligibility).
+STAGES = ["Just an idea", "Pre-seed", "Seed", "Series A+", "Live business"]
+STAGE_HINTS = {
+    "Just an idea": "Nothing built yet, exploring the problem",
+    "Pre-seed": "Building the first version, little or no revenue",
+    "Seed": "Product live with early customers, ready to grow",
+    "Series A+": "Proven revenue, scaling the team and market",
+    "Live business": "Trading and profitable or close, funding growth",
+}
+PRODUCT_STATUS = ["Not built yet", "Prototype", "Live with users", "Live with revenue"]
 SECTORS = ["Agriculture", "Climate & Energy", "Education", "Fintech", "Health", "Manufacturing",
            "Retail & E-commerce", "Software & AI", "Tourism", "Logistics", "Social impact", "Other"]
 PROGRAM_KINDS = ["Grant", "Equity investment", "Prize / competition", "Accelerator", "Loan / debt"]

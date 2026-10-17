@@ -18,21 +18,21 @@ DEMO_PASSWORD = "seedbridge-demo"  # demo-only accounts, also listed in the READ
 SPONSORS = [
     ("grants@example-green.test", "Asha Perera", "Example Green Futures Foundation", [
         dict(name="Climate Resilience Micro-Grant", kind="Grant", min_usd=5000, max_usd=25000,
-             sectors="Agriculture, Climate & Energy", stages="Idea, Prototype, MVP", countries="Sri Lanka, India, Bangladesh",
+             sectors="Agriculture, Climate & Energy", stages="Just an idea, Pre-seed, Seed", countries="Sri Lanka, India, Bangladesh",
              deadline="2026-12-15",
              description="Non-dilutive grants for early ventures that help farmers and coastal communities adapt to climate change.",
              criteria="Clear beneficiary group, a pilot plan within 6 months, measurable impact (tonnes, hectares, households). Local founding team preferred."),
     ]),
     ("invest@example-seed.test", "Daniel Fernando", "Example Seed Partners", [
         dict(name="Pre-Seed Fund I", kind="Equity investment", min_usd=50000, max_usd=250000,
-             sectors="Fintech, Software & AI, Logistics, Retail & E-commerce", stages="MVP, Early revenue", countries="",
+             sectors="Fintech, Software & AI, Logistics, Retail & E-commerce", stages="Seed, Series A+", countries="",
              deadline="2027-03-31",
              description="First institutional cheque for software businesses in South Asia with regional ambitions.",
              criteria="Paying customers or strong usage, a technical co-founder, a market that can reach $50M revenue. We lead or co-lead rounds."),
     ]),
     ("programs@example-launchpad.test", "Nimali Silva", "Example Women Founders Launchpad", [
         dict(name="Women Founders Accelerator 2027", kind="Accelerator", min_usd=10000, max_usd=20000,
-             sectors="", stages="Prototype, MVP, Early revenue", countries="",
+             sectors="", stages="Pre-seed, Seed, Live business", countries="",
              deadline="2027-01-20",
              description="12-week program with mentoring, investor demo day and a stipend for women-led startups.",
              criteria="At least one woman founder in a leadership role, committed full time, a working prototype."),
@@ -45,27 +45,27 @@ SPONSORS = [
 ]
 
 FOUNDERS = [
-    ("founder@example.test", "Kasun Jayawardena", dict(
+    ("founder@example.test", "Kasun Jayawardena", "/static/img/avatars/a1.jpg", dict(
         title="PaddySense", one_liner="SMS alerts that tell rice farmers when and how much to irrigate, using soil sensors and weather data.",
-        sector="Agriculture", stage="Prototype", country="Sri Lanka", ask_usd=20000,
+        sector="Agriculture", stage="Pre-seed", product_status="Prototype", country="Sri Lanka", ask_usd=20000,
         problem="Smallholder rice farmers in the dry zone over-irrigate early in the season and run short later; tank water allocation is guesswork. Yield losses of 15-25% in drought years are common, and farmers have no simple signal for when to irrigate.",
         solution="Low-cost soil moisture sensors (under $30 each) shared across a farmer group, combined with Department of Meteorology forecasts. Farmers receive a Sinhala SMS with an irrigation recommendation every two days.",
         business_model="Farmer organisations pay $3 per farmer per season; agro-input companies sponsor sensors in exchange for advisory slots.",
         team="Kasun (agricultural engineer, 6 years with irrigation department), Tharindu (embedded systems developer).",
         traction="Pilot with 40 farmers in Anuradhapura during Yala 2026: 18% water saving reported by the farmer organisation.",
         use_of_funds="200 sensors, SMS costs for 2 seasons, field officer for onboarding 500 farmers.")),
-    ("founder2@example.test", "Ruwani Dissanayake", dict(
+    ("founder2@example.test", "Ruwani Dissanayake", "/static/img/avatars/b3.jpg", dict(
         title="LedgerLite", one_liner="Voice-first bookkeeping for small shops: say the sale, get the books.",
-        sector="Fintech", stage="Early revenue", country="Sri Lanka", ask_usd=150000,
+        sector="Fintech", stage="Seed", product_status="Live with revenue", country="Sri Lanka", ask_usd=150000,
         problem="Most small retailers keep credit and sales in paper books. They can't show income to banks, so they can't get working-capital loans.",
         solution="An Android app where shop owners record sales and customer credit by voice in Sinhala, Tamil or English. Monthly statements are formatted for bank loan applications.",
         business_model="Freemium; $4/month for statements and reminders. Revenue share with partner banks on loans originated.",
         team="Ruwani (ex-product manager at a payments company), co-founder CTO with 8 years in mobile development.",
         traction="2,300 active shops, 410 paying, $1,600 monthly recurring revenue growing 12% month on month. Pilot with one regional bank.",
         use_of_funds="Hire 3 engineers and 2 field sales staff; expand to Tamil Nadu.")),
-    ("founder3@example.test", "Imran Farook", dict(
+    ("founder3@example.test", "Imran Farook", "/static/img/avatars/a3.jpg", dict(
         title="ClassBridge", one_liner="Recorded O/L science lessons that run offline on cheap tablets for rural schools.",
-        sector="Education", stage="Idea", country="Sri Lanka", ask_usd=8000,
+        sector="Education", stage="Just an idea", product_status="Not built yet", country="Sri Lanka", ask_usd=8000,
         problem="Rural schools lack qualified science teachers.",
         solution="Offline tablet lessons.",
         business_model="", team="", traction="", use_of_funds="Tablets and content.")),
@@ -89,9 +89,10 @@ def main():
             db.run(f"INSERT INTO programs ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
                    *p.values(), uid, db.now())
 
-    for email, name, idea in FOUNDERS:
-        uid = db.run("INSERT INTO users (email, name, role, org, password_hash, created_at) VALUES (?,?,?,?,?,?)",
-                     email, name, "founder", None, auth.hash_password(DEMO_PASSWORD), db.now())
+    for email, name, photo, idea in FOUNDERS:
+        uid = db.run("INSERT INTO users (email, name, role, org, password_hash, avatar_path, created_at)"
+                     " VALUES (?,?,?,?,?,?,?)",
+                     email, name, "founder", None, auth.hash_password(DEMO_PASSWORD), photo, db.now())
         cols = list(idea) + ["user_id", "share", "status", "created_at", "updated_at"]
         idea_id = db.run(f"INSERT INTO ideas ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
                          *idea.values(), uid, 1, "pending", db.now(), db.now())

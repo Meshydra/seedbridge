@@ -1,13 +1,17 @@
 """The multi-model pipeline.
 
 Idea submitted
-  1. intake  - Nemotron 3.5 Lightning : turn the form into a clean structured profile
-  2. gaps    - Nemotron 3 Nano        : what an investor would ask that the founder hasn't answered
-  3. vision  - Nemotron 3.5 Super VL  : read the uploaded pitch-deck slide (optional)
-  4. review  - Nemotron 3 Ultra       : investor-readiness scorecard
-  5. match   - Qwen3 Embedding + rules, then Nemotron 3 Super reranks and explains each match
+  1. intake   - Nemotron 3.5 Lightning : structured profile + web search queries
+  2. research - Tavily web search, summarised by Nemotron 3.5 Lightning (market snapshot with sources)
+  3. gaps     - Nemotron 3 Nano        : what a panel will ask, grounded in retrieved stage benchmarks (RAG)
+  4. vision   - Nemotron 3.5 Super VL  : read the uploaded pitch-deck slide (optional)
+  5. review   - Nemotron 3 Ultra       : investor-readiness scorecard, grounded in the knowledge base (RAG)
+                                         and the market research, with citations
+  6. match    - Qwen3 Embedding + rules, then Nemotron 3 Super reranks and explains each match
 On demand
-  6. draft   - Nemotron 3 Ultra       : application / cover note tailored to one sponsor program
+  7. draft    - Nemotron 3 Ultra       : application tailored to one program, grounded in writing guidance (RAG)
+
+RAG = app/ai/rag.py: app/knowledge/*.md chunked by section, embedded with Qwen3-Embedding-8B.
 """
 import json
 import re
@@ -15,7 +19,7 @@ import traceback
 from datetime import date
 
 from .. import db
-from . import client
+from . import client, rag, research
 
 # ---------------------------------------------------------------- helpers
 
@@ -35,7 +39,8 @@ def _csv(value):
 
 def idea_text(idea: dict) -> str:
     fields = [("Title", "title"), ("One-liner", "one_liner"), ("Problem", "problem"),
-              ("Solution", "solution"), ("Sector", "sector"), ("Stage", "stage"), ("Country", "country"),
+              ("Solution", "solution"), ("Sector", "sector"), ("Funding stage", "stage"),
+              ("Product status", "product_status"), ("Country", "country"),
               ("Funding ask (USD)", "ask_usd"), ("Business model", "business_model"), ("Team", "team"),
               ("Traction", "traction"), ("Use of funds", "use_of_funds")]
     return "\n".join(f"{label}: {idea.get(key) or '(not provided)'}" for label, key in fields)
@@ -49,7 +54,7 @@ def program_text(p: dict) -> str:
 
 _STOP = set("""that this with from have will your their they them into than then also only more most
 over under about which while where when what would could should there these those being been were
-idea ideas stage early sri lanka india bangladesh founders founder program programs grant grants
+idea ideas stage early just live business series seed sri lanka india bangladesh founders founder program programs grant grants
 other made make makes using used each every year years month months plan plans clear""".split())
 
 
@@ -84,14 +89,16 @@ INTAKE_SYSTEM = """You structure startup and small-business funding applications
 Return ONLY a JSON object with keys:
 summary (2 sentences, plain English), customer (who pays), business_model, sector, stage, country,
 ask_usd (integer or null), keywords (5-8 lowercase strings), red_flags (list of short strings: claims
-that look unrealistic, contradictions, or missing basics; empty list if none)."""
+that look unrealistic, contradictions, or missing basics; empty list if none),
+search_queries (2-3 web search queries that would find the market size, competitors and recent
+news for this idea in its country)."""
 
 
 def _demo_intake(idea):
     flags = []
     if not idea.get("traction"):
         flags.append("No traction or validation mentioned")
-    if (idea.get("ask_usd") or 0) > 2_000_000 and idea.get("stage") in ("Idea", "Prototype"):
+    if (idea.get("ask_usd") or 0) > 2_000_000 and idea.get("stage") in ("Just an idea", "Pre-seed"):
         flags.append("Large ask for a pre-revenue stage")
     words = sorted(_words(f"{idea.get('problem')} {idea.get('solution')} {idea.get('one_liner')}"),
                    key=len, reverse=True)
@@ -103,13 +110,27 @@ def _demo_intake(idea):
         "ask_usd": idea.get("ask_usd"),
         "keywords": words[:6],
         "red_flags": flags,
+        "search_queries": [f"{idea['title']} competitors {idea.get('country') or ''}".strip(),
+                           f"{idea.get('sector')} market size {idea.get('country') or ''}".strip()],
     }
 
 
-# ---------------------------------------------------------------- step 2: gaps
+# ---------------------------------------------------------------- step 2: research
 
-GAPS_SYSTEM = """You are a funding analyst. Given a founder's application, find what a grant panel or
-investor would need that is missing or too vague. Return ONLY JSON:
+RESEARCH_SYSTEM = """You are a market analyst. Using ONLY the web search results provided, write a short
+market snapshot for the idea. Return ONLY JSON:
+{"snapshot": "3-4 sentences", "market_size": "figure with source title, or 'not found'",
+"competitors": [{"name": str, "note": "what they do, 1 sentence", "url": str}],
+"signals": ["recent news or trends that matter, with source title"],
+"sources": [{"title": str, "url": str}]}
+Never invent a URL or a number that is not in the results."""
+
+
+# ---------------------------------------------------------------- step 3: gaps
+
+GAPS_SYSTEM = """You are a funding analyst. Given a founder's application and reference guidance on
+what funders expect at this stage, find what a grant panel or investor would need that is missing
+or too vague. Return ONLY JSON:
 {"completeness": 0-100, "missing": [{"field": str, "why": str}], "questions": [3-5 sharp follow-up questions]}"""
 
 _KEY_FIELDS = [("problem", "Problem"), ("solution", "Solution"), ("business_model", "Business model"),
@@ -151,15 +172,18 @@ def _demo_vision(idea):
 # ---------------------------------------------------------------- step 4: review
 
 REVIEW_SYSTEM = """You are a seasoned grant-panel chair and early-stage investor. Review the
-application honestly; do not flatter. Score each dimension 1-10:
+application honestly; do not flatter. Judge it against the reference guidance provided (benchmarks
+for its funding stage) and the market research, not against later-stage companies.
+Score each dimension 1-10:
 Problem, Solution, Market, Team, Traction, Financial ask.
 Return ONLY JSON:
 {"overall": 0-100, "verdict": "one sentence", "dimensions": [{"name": str, "score": int, "comment": str}],
 "strengths": [3 strings], "risks": [3 strings], "improvements": [3 concrete edits the founder should make],
-"best_fit": [funding types that suit this idea now, from: Grant, Equity investment, Prize / competition, Accelerator, Loan / debt]}"""
+"best_fit": [funding types that suit this idea now, from: Grant, Equity investment, Prize / competition, Accelerator, Loan / debt],
+"based_on": [titles of the reference guidance sections you relied on]}"""
 
 
-def _demo_review(idea, gaps):
+def _demo_review(idea, gaps, refs=()):
     def score(key, base=4):
         v = idea.get(key) or ""
         v = str(v)
@@ -174,8 +198,11 @@ def _demo_review(idea, gaps):
     ]
     overall = round(sum(d["score"] for d in dims) / len(dims) * 10 * 0.6 + gaps["completeness"] * 0.4)
     stage = idea.get("stage")
-    best = ["Grant", "Prize / competition", "Accelerator"] if stage in ("Idea", "Prototype") else \
-           ["Equity investment", "Accelerator", "Loan / debt"]
+    best = {"Just an idea": ["Grant", "Prize / competition"],
+            "Pre-seed": ["Grant", "Accelerator", "Prize / competition"],
+            "Seed": ["Equity investment", "Accelerator"],
+            "Series A+": ["Equity investment"],
+            "Live business": ["Loan / debt", "Grant", "Equity investment"]}.get(stage, ["Grant", "Accelerator"])
     weakest = sorted(dims, key=lambda d: d["score"])[:3]
     return {
         "overall": overall,
@@ -187,6 +214,7 @@ def _demo_review(idea, gaps):
         "risks": [f"{d['name']} is thin ({d['score']}/10)" for d in weakest],
         "improvements": [f"Strengthen {d['name'].lower()}: {d['comment']}" for d in weakest],
         "best_fit": best,
+        "based_on": [r["title"] for r in refs][:3],
     }
 
 
@@ -209,8 +237,9 @@ def _demo_rerank(idea, candidates):
                     + 5 * ((idea.get("country") or "").lower() in [x.lower() for x in _csv(p.get("countries"))]))
         fit = round(35 + c["similarity"] * 40 + targeted - 18 * len(c["concerns"]))
         reason = f"Shares focus on {', '.join(overlap)}." if overlap else "General fit on stage and funding size."
+        reason = reason if c["concerns"] else reason + " Meets every eligibility rule."
         out.append({"program_id": c["program"]["id"], "fit_score": max(5, min(97, fit)),
-                    "reason": reason + f" {c['program']['kind']} suits a {idea.get('stage', '').lower()}-stage idea.",
+                    "reason": reason,
                     "concerns": c["concerns"]})
     return {"matches": sorted(out, key=lambda m: -m["fit_score"])}
 
@@ -277,13 +306,34 @@ def process_idea(idea_id: int):
         idea = db.one("SELECT * FROM ideas WHERE id = ?", idea_id)
         text = idea_text(idea)
 
-        res = client.chat("intake", INTAKE_SYSTEM, text, demo=lambda: _demo_intake(idea), max_tokens=800)
+        res = client.chat("intake", INTAKE_SYSTEM, text, demo=lambda: _demo_intake(idea), max_tokens=900)
         _record("intake", res, idea_id=idea_id)
         profile = res.data
         db.run("UPDATE ideas SET profile_json=? WHERE id=?", json.dumps(profile), idea_id)
 
+        market = None
+        db.run("UPDATE ideas SET research_json=NULL WHERE id=?", idea_id)
+        if research.enabled() and profile.get("search_queries"):
+            step = "research"
+            found = research.search(profile["search_queries"])
+            db.run("INSERT INTO ai_steps (idea_id, step, model, status, latency_ms, created_at)"
+                   " VALUES (?,?,?,?,?,?)", idea_id, "research", "tavily/search", "done", found["latency_ms"], db.now())
+            if found["results"]:
+                res = client.chat("intake", RESEARCH_SYSTEM,
+                                  json.dumps({"idea": text, "search_results": found["results"]}),
+                                  demo=lambda: {}, max_tokens=1200)
+                _record("summarise", res, idea_id=idea_id)
+                market = res.data
+                db.run("UPDATE ideas SET research_json=? WHERE id=?", json.dumps(market), idea_id)
+
+        step = "retrieve"
+        refs = rag.retrieve(f"{idea.get('stage')} stage funding expectations {idea.get('sector')} "
+                            f"{profile.get('summary', '')}", k=4,
+                            on_call=lambda r: _record("retrieve", r, idea_id=idea_id))
+
         step = "gaps"
-        res = client.chat("gaps", GAPS_SYSTEM, text, demo=lambda: _demo_gaps(idea), max_tokens=900)
+        gaps_input = f"{text}\n\nReference guidance:\n{rag.as_context(refs[:3])}"
+        res = client.chat("gaps", GAPS_SYSTEM, gaps_input, demo=lambda: _demo_gaps(idea), max_tokens=900)
         _record("gaps", res, idea_id=idea_id)
         gaps = res.data
         db.run("UPDATE ideas SET gaps_json=? WHERE id=?", json.dumps(gaps), idea_id)
@@ -299,8 +349,9 @@ def process_idea(idea_id: int):
 
         step = "review"
         review_input = json.dumps({"application": text, "structured_profile": profile,
-                                   "gaps": gaps, "pitch_deck": deck})
-        res = client.chat("review", REVIEW_SYSTEM, review_input, demo=lambda: _demo_review(idea, gaps),
+                                   "gaps": gaps, "pitch_deck": deck, "market_research": market,
+                                   "reference_guidance": [{"title": r["title"], "text": r["text"]} for r in refs]})
+        res = client.chat("review", REVIEW_SYSTEM, review_input, demo=lambda: _demo_review(idea, gaps, refs),
                           max_tokens=2500)
         _record("review", res, idea_id=idea_id)
         db.run("UPDATE ideas SET review_json=? WHERE id=?", json.dumps(res.data), idea_id)
@@ -355,9 +406,7 @@ def _demo_draft(idea, program, review):
         f"Our solution\n{gap('solution')}\n\n"
         f"Traction\n{gap('traction')}\n\n"
         f"The ask and use of funds\nWe are requesting {ask}. {gap('use_of_funds')}\n\n"
-        f"Team\n{gap('team')}\n\n"
-        f"(Demo-mode draft. With a Nebius key this is written by Nemotron 3 Ultra using the review: "
-        f"{(review or {}).get('verdict', '')})"
+        f"Team\n{gap('team')}\n"
     )
 
 
@@ -367,8 +416,12 @@ def draft_application(application_id: int):
     program = db.one("SELECT * FROM programs WHERE id = ?", app_row["program_id"])
     review = db.loads(idea["review_json"], {})
     try:
+        refs = rag.retrieve(f"writing a {program['kind']} application {program.get('criteria') or ''}", k=3,
+                            on_call=lambda r: _record("retrieve", r, idea_id=idea["id"], application_id=application_id))
         payload = json.dumps({"program": program_text(program), "application": idea_text(idea),
-                              "review_improvements": review.get("improvements")})
+                              "review_improvements": review.get("improvements"),
+                              "market_research": db.loads(idea.get("research_json")),
+                              "writing_guidance": rag.as_context(refs)})
         res = client.chat("draft", DRAFT_SYSTEM, payload, demo=lambda: _demo_draft(idea, program, review),
                           json_out=False, max_tokens=1500, temperature=0.5)
         _record("draft", res, idea_id=idea["id"], application_id=application_id)

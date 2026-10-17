@@ -1,45 +1,52 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }} · SeedBridge{% endblock %}
+{% block page %}program{% endblock %}
 {% block content %}
-<div class="page-head">
+<div class="page-head" data-reveal>
   <div>
-    <p class="eyebrow"><a href="/dashboard">Your programs</a></p>
+    <p class="eyebrow"><a href="/dashboard">My programs</a></p>
     <h1>{{ p.name }}</h1>
-    <p class="muted">{{ p.kind }} · {{ p.min_usd | money }}–{{ p.max_usd | money }}{% if p.deadline %} · closes {{ p.deadline }}{% endif %}</p>
-    <p class="tags">{% for s in (p.sectors or 'Any sector').split(', ') %}<span class="tag">{{ s }}</span>{% endfor %}{% for s in (p.stages or 'Any stage').split(', ') %}<span class="tag">{{ s }}</span>{% endfor %}<span class="tag">{{ p.countries or 'Any country' }}</span></p>
+    <div class="chips"><span class="chip brand">{{ p.kind }}</span><span class="chip">{{ p.min_usd | money }}–{{ p.max_usd | money }}</span>{% if p.deadline %}<span class="chip">Closes {{ p.deadline }}</span>{% endif %}
+      {% for s in (p.stages or 'Any stage').split(', ') %}<span class="chip">{{ s }}</span>{% endfor %}<span class="chip">{{ p.countries or 'Any country' }}</span></div>
   </div>
 </div>
 
 {% if apps %}
-<section class="card">
+<section class="glass card" data-reveal>
   <h2>Applications</h2>
-  <table class="table">
-    <thead><tr><th>Idea</th><th>Status</th><th>Updated</th></tr></thead>
-    <tbody>{% for a in apps %}<tr><td><a href="/applications/{{ a.id }}">{{ a.title }}</a></td><td>{{ a.status | capitalize }}</td><td class="muted">{{ a.updated_at[:10] }}</td></tr>{% endfor %}</tbody>
-  </table>
+  <div data-stagger>
+  {% for a in apps %}
+    <a class="match" href="/applications/{{ a.id }}" style="grid-template-columns:auto 1fr auto">
+      <img class="avatar lg" src="/u/{{ a.founder_id }}/avatar" alt="">
+      <div><h3>{{ a.title }}</h3><p class="muted small">Updated {{ a.updated_at[:10] }}</p></div>
+      <span class="chip {{ 'brand' if a.status in ('intro','shortlisted') else ('bad' if a.status == 'declined' else '') }}">{{ {'submitted': 'New', 'shortlisted': 'Shortlisted', 'intro': 'Intro requested', 'declined': 'Declined'}.get(a.status, a.status) }}</span>
+    </a>
+  {% endfor %}
+  </div>
 </section>
 {% endif %}
 
-<section class="card">
-  <div class="section-head"><h2>Matched founders</h2><span class="muted small">Only ideas their founders chose to share</span></div>
+<section class="glass card" data-reveal>
+  <div class="section-head"><div><h2 style="margin:0">Founders who fit</h2><p class="muted small" style="margin:0">Best fits first. Only founders who chose to share appear here.</p></div></div>
   {% if matches %}
-  <div class="matches">
+  <div data-stagger>
     {% for m in matches %}
     {% set review = m.review_json | loads({}) %}
     {% set concerns = m.concerns | loads([]) %}
-    <a class="match link-card {{ 'weak' if m.fit_score < 50 }}" href="/programs/{{ p.id }}/ideas/{{ m.idea_id }}">
-      <div class="fit"><b>{{ m.fit_score }}</b><span>fit</span></div>
-      <div class="match-body">
+    <a class="match {{ 'weak' if m.fit_score < 35 }}" href="/programs/{{ p.id }}/ideas/{{ m.idea_id }}">
+      {% with score = m.fit_score %}{% include "_fit.html" %}{% endwith %}
+      <div>
         <h3>{{ m.title }}</h3>
-        <p class="small muted">{{ m.sector }} · {{ m.stage }} · {{ m.country }} · asks {{ m.ask_usd | money }}{% if review.overall is defined %} · readiness {{ review.overall }}/100{% endif %}</p>
+        <div class="who-row"><img class="avatar sm" src="/u/{{ m.founder_id }}/avatar" alt="">{{ m.founder_name }} · {{ m.stage }} · {{ m.country }} · asking {{ m.ask_usd | money }}</div>
         <p>{{ m.reason }}</p>
-        {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+        {% if concerns %}<div class="concerns">{% for c in concerns %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
       </div>
+      {% if review.overall is defined %}<div class="kpi match-act" style="text-align:right"><b>{{ review.overall }}</b><span>readiness</span></div>{% endif %}
     </a>
     {% endfor %}
   </div>
   {% else %}
-  <p class="muted" {% if not matches %}data-poll-reload="8000"{% endif %}>No matches yet. Matching runs when you publish and whenever a founder submits an idea.</p>
+  <p class="muted" data-poll-reload>Looking for founders who fit… new ideas are matched to your program as they arrive.</p>
   {% endif %}
 </section>
 {% endblock %}

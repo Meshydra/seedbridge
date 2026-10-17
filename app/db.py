@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('founder','sponsor')),
   org TEXT,
   password_hash TEXT NOT NULL,
+  avatar_path TEXT, bio TEXT, website TEXT,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS ideas (
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS ideas (
   title TEXT NOT NULL,
   one_liner TEXT, problem TEXT, solution TEXT, sector TEXT, stage TEXT, country TEXT,
   ask_usd INTEGER, business_model TEXT, team TEXT, traction TEXT, use_of_funds TEXT,
-  deck_path TEXT,
+  product_status TEXT, deck_path TEXT, research_json TEXT,
   share INTEGER NOT NULL DEFAULT 1,
   status TEXT NOT NULL DEFAULT 'pending',
   profile_json TEXT, gaps_json TEXT, deck_json TEXT, review_json TEXT, embedding_json TEXT,
@@ -54,6 +55,11 @@ CREATE TABLE IF NOT EXISTS ai_steps (
   demo INTEGER NOT NULL DEFAULT 0, error TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS kb_chunks (
+  id INTEGER PRIMARY KEY,
+  source TEXT NOT NULL, title TEXT NOT NULL, text TEXT NOT NULL,
+  embedding_json TEXT
+);
 CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY,
   idea_id INTEGER NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
@@ -83,10 +89,22 @@ def connect():
         conn.close()
 
 
+# Columns added after the first release; added in place so existing databases keep working.
+MIGRATIONS = {
+    "users": ["avatar_path TEXT", "bio TEXT", "website TEXT"],
+    "ideas": ["product_status TEXT", "research_json TEXT"],
+}
+
+
 def init():
     with connect() as c:
         c.execute("PRAGMA journal_mode = WAL")
         c.executescript(SCHEMA)
+        for table, cols in MIGRATIONS.items():
+            have = {r["name"] for r in c.execute(f"PRAGMA table_info({table})")}
+            for col in cols:
+                if col.split()[0] not in have:
+                    c.execute(f"ALTER TABLE {table} ADD COLUMN {col}")
 
 
 def one(sql, *args):

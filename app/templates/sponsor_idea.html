@@ -1,26 +1,32 @@
 {% extends "base.html" %}
 {% block title %}{{ idea.title }} · SeedBridge{% endblock %}
+{% block page %}idea{% endblock %}
 {% block content %}
 {% set review = idea.review_json | loads({}) %}
 {% set profile = idea.profile_json | loads({}) %}
+{% set market = idea.research_json | loads(none) %}
 {% set concerns = match.concerns | loads([]) %}
-<div class="page-head">
-  <div>
-    <p class="eyebrow"><a href="/programs/{{ p.id }}">{{ p.name }}</a></p>
-    <h1>{{ idea.title }}</h1>
-    <p class="muted">{{ idea.one_liner or '' }}</p>
-    <p class="tags"><span class="tag">{{ idea.sector }}</span><span class="tag">{{ idea.stage }}</span><span class="tag">{{ idea.country }}</span><span class="tag">Asks {{ idea.ask_usd | money }}</span></p>
+<div class="page-head" data-reveal>
+  <div class="idea-head">
+    <img class="avatar xl" src="/u/{{ idea.user_id }}/avatar" alt="">
+    <div>
+      <p class="eyebrow"><a href="/programs/{{ p.id }}">{{ p.name }}</a></p>
+      <h1>{{ idea.title }}</h1>
+      <p class="muted" style="margin:0">{{ idea.one_liner or '' }}</p>
+      <div class="chips"><span class="chip brand">{{ idea.stage }}</span><span class="chip">{{ idea.sector }}</span><span class="chip">{{ idea.country }}</span><span class="chip">Asking {{ idea.ask_usd | money }}</span></div>
+      <p class="small muted" style="margin:0">by {{ idea.founder_name }}</p>
+    </div>
   </div>
-  <div class="fit big"><b>{{ match.fit_score }}</b><span>fit for this program</span></div>
+  {% with score = match.fit_score %}{% include "_fit.html" %}{% endwith %}
 </div>
-<section class="card">
-  <h2>Why it matched</h2>
+<section class="glass card" data-reveal>
+  <h2>Why they fit {{ p.name }}</h2>
   <p>{{ match.reason }}</p>
-  {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+  {% if concerns %}<div class="concerns">{% for c in concerns %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
 </section>
-{% if review %}<section class="card">{% include "_review.html" %}</section>{% endif %}
-<section class="card">
-  <h2>The application</h2>
+{% if review %}<section class="glass card" data-reveal>{% include "_review.html" %}</section>{% endif %}
+<section class="glass card" data-reveal>
+  <h2>In their words</h2>
   <dl class="kv">
     <dt>Summary</dt><dd>{{ profile.summary }}</dd>
     <dt>Problem</dt><dd>{{ idea.problem or '—' }}</dd>
@@ -30,6 +36,7 @@
     <dt>Traction</dt><dd>{{ idea.traction or '—' }}</dd>
     <dt>Use of funds</dt><dd>{{ idea.use_of_funds or '—' }}</dd>
   </dl>
-  <p class="small muted">Founder contact details are shared once they apply and you request an intro.</p>
+  {% if market and market.snapshot %}<h3 style="margin-top:18px">Market</h3><p class="muted">{{ market.snapshot }}</p>{% endif %}
+  <p class="small faint" style="margin-top:16px">Contact details are shared once they apply and you request an intro.</p>
 </section>
 {% endblock %}

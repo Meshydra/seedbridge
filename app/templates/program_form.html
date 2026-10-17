@@ -1,35 +1,35 @@
 {% extends "base.html" %}
-{% block title %}New program · SeedBridge{% endblock %}
+{% block title %}List a program · SeedBridge{% endblock %}
+{% block page %}form{% endblock %}
 {% block content %}
-<h1>Publish a funding program</h1>
-<p class="muted">Founders' ideas are matched against what you write here, so be specific about who you fund and what you look for.</p>
-<form method="post" action="/programs/new" class="card form">
-  <fieldset>
-    <legend>Program</legend>
+<div class="wizard">
+  <div data-reveal>
+    <p class="eyebrow">New program</p>
+    <h1>Tell founders what you fund</h1>
+    <p class="muted">The more specific you are, the better your matches.</p>
+  </div>
+  <form method="post" action="/programs/new" class="glass card" data-reveal>
     <div class="row-2">
-      <label>Program name<input name="name" required></label>
+      <label>Program name<input name="name" required placeholder="e.g. Climate Resilience Micro-Grant"></label>
       <label>Type<select name="kind">{% for k in config.PROGRAM_KINDS %}<option>{{ k }}</option>{% endfor %}</select></label>
     </div>
-    <label>Description<textarea name="description" rows="3"></textarea></label>
+    <label>About the program<textarea name="description" rows="3"></textarea></label>
     <label>What you look for<textarea name="criteria" rows="4"></textarea>
-      <span class="hint">Selection criteria, must-haves, what makes an application stand out.</span></label>
-  </fieldset>
-  <fieldset>
-    <legend>Eligibility</legend>
+      <span class="hint">Must-haves, what makes an application stand out, what you won't fund.</span></label>
     <div class="row-3">
       <label>Minimum (USD)<input name="min_usd" inputmode="numeric"></label>
       <label>Maximum (USD)<input name="max_usd" inputmode="numeric"></label>
       <label>Deadline<input type="date" name="deadline"></label>
     </div>
-    <label>Countries<input name="countries" placeholder="Any">
+    <label>Countries<input name="countries" placeholder="Any country">
       <span class="hint">Comma-separated, or leave blank for any country.</span></label>
-    <div class="checks"><span class="label">Sectors (none ticked = any)</span>
-      {% for s in config.SECTORS %}<label class="check"><input type="checkbox" name="sectors" value="{{ s }}"> {{ s }}</label>{% endfor %}
-    </div>
-    <div class="checks"><span class="label">Stages (none ticked = any)</span>
+    <div class="checks"><span class="label">Funding stages you back <span class="hint" style="display:inline">(none selected = any)</span></span>
       {% for s in config.STAGES %}<label class="check"><input type="checkbox" name="stages" value="{{ s }}"> {{ s }}</label>{% endfor %}
     </div>
-  </fieldset>
-  <button class="btn">Publish and match</button>
-</form>
+    <div class="checks"><span class="label">Sectors <span class="hint" style="display:inline">(none selected = any)</span></span>
+      {% for s in config.SECTORS %}<label class="check"><input type="checkbox" name="sectors" value="{{ s }}"> {{ s }}</label>{% endfor %}
+    </div>
+    <button class="btn btn-lg">Publish and find founders</button>
+  </form>
+</div>
 {% endblock %}

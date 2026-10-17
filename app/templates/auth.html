@@ -1,30 +1,42 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Create account' if mode == 'signup' else 'Log in' }} · SeedBridge{% endblock %}
+{% block title %}{{ 'Create your account' if mode == 'signup' else 'Log in' }} · SeedBridge{% endblock %}
+{% block page %}auth{% endblock %}
 {% block content %}
-<div class="auth card">
-  {% if mode == 'signup' %}
-    <h1>Create your account</h1>
-    <div class="role-switch">
-      <a href="/signup?role=founder" class="{{ 'on' if role == 'founder' }}">Founder</a>
-      <a href="/signup?role=sponsor" class="{{ 'on' if role == 'sponsor' }}">Sponsor / investor</a>
+<div class="auth-wrap glass" data-pop>
+  <div class="auth-art">
+    <img src="/static/img/{{ 'sponsors' if role == 'sponsor' else 'hero' }}.jpg" alt="" data-kenburns>
+    <div class="glass">
+      <b>{{ 'Find the founders you exist to fund.' if role == 'sponsor' else 'Your idea, ready for funding.' }}</b>
+      <p class="muted small" style="margin:4px 0 0">{{ 'Ranked, pre-reviewed applicants who match your criteria.' if role == 'sponsor' else 'A readiness review, matched funders and tailored applications.' }}</p>
     </div>
-    <p class="muted">{{ 'Submit ideas, get reviewed, apply to programs.' if role == 'founder' else 'Publish grants, funds or prizes and receive matched, pre-reviewed founders.' }}</p>
-  {% else %}
-    <h1>Log in</h1>
-  {% endif %}
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  <form method="post" action="/{{ mode }}">
+  </div>
+  <div class="auth-form">
     {% if mode == 'signup' %}
-      <input type="hidden" name="role" value="{{ role }}">
-      <label>Your name<input name="name" required autocomplete="name"></label>
-      <label>{{ 'Organisation' if role == 'sponsor' else 'Company (optional)' }}<input name="org" {{ 'required' if role == 'sponsor' }}></label>
+      <h1>Create your account</h1>
+      <div class="role-switch" data-switch="{{ 'right' if role == 'sponsor' else 'left' }}">
+        <span class="pill-bg" aria-hidden="true"></span>
+        <a href="/signup?role=founder" class="{{ 'on' if role == 'founder' }}">I'm a founder</a>
+        <a href="/signup?role=sponsor" class="{{ 'on' if role == 'sponsor' }}">I fund founders</a>
+      </div>
     {% else %}
-      <input type="hidden" name="next" value="{{ next }}">
+      <h1>Welcome back</h1>
+      <p class="muted">Log in to see your reviews and matches.</p>
     {% endif %}
-    <label>Email<input type="email" name="email" required autocomplete="email"></label>
-    <label>Password<input type="password" name="password" required minlength="8" autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}"></label>
-    <button class="btn wide">{{ 'Create account' if mode == 'signup' else 'Log in' }}</button>
-  </form>
-  <p class="muted small">{% if mode == 'signup' %}Already have an account? <a href="/login">Log in</a>{% else %}New here? <a href="/signup">Create an account</a>{% endif %}</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/{{ mode }}" style="margin-top:18px">
+      {% if mode == 'signup' %}
+        <input type="hidden" name="role" value="{{ role }}">
+        <label>Your name<input name="name" required autocomplete="name"></label>
+        <label>{{ 'Organisation' if role == 'sponsor' else 'Company (optional)' }}<input name="org" {{ 'required' if role == 'sponsor' }} autocomplete="organization"></label>
+      {% else %}
+        <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
+      <label>Email<input type="email" name="email" required autocomplete="email"></label>
+      <label>Password<input type="password" name="password" required minlength="8" autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}">
+        {% if mode == 'signup' %}<span class="hint">At least 8 characters.</span>{% endif %}</label>
+      <button class="btn btn-lg wide">{{ 'Create account' if mode == 'signup' else 'Log in' }}</button>
+    </form>
+    <p class="muted small" style="margin-top:16px">{% if mode == 'signup' %}Already have an account? <a href="/login">Log in</a>{% else %}New to SeedBridge? <a href="/signup">Create an account</a>{% endif %}</p>
+  </div>
 </div>
 {% endblock %}

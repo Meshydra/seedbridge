@@ -1,42 +1,144 @@
 {% extends "base.html" %}
+{% block page %}home{% endblock %}
 {% block content %}
 <section class="hero">
-  <p class="eyebrow">Grants · Venture capital · Prizes · Accelerators</p>
-  <h1>Turn a business idea into a funding-ready application, and land it in front of the right sponsor.</h1>
-  <p class="lede">Founders describe their idea once. A team of NVIDIA Nemotron models structures it, finds what's missing, scores it the way a grant panel would, and matches it to programs that actually fit. Sponsors publish programs and receive a ranked, pre-reviewed shortlist.</p>
-  <div class="cta-row">
-    <a class="btn" href="/signup?role=founder">I'm a founder</a>
-    <a class="btn btn-ghost" href="/signup?role=sponsor">I fund founders</a>
+  <div>
+    <p class="eyebrow" data-hero>Grants · Investors · Accelerators · Prizes</p>
+    <h1 data-split>Your idea deserves funding. <span class="grad">We'll get it ready.</span></h1>
+    <p class="lede" data-hero>Describe your business once. SeedBridge reviews it the way a funding panel would, shows you exactly what to fix, and puts you in front of the grants and investors that actually fit.</p>
+    <div class="cta-row" data-hero>
+      <a class="btn btn-lg" href="/signup?role=founder">Get my free review</a>
+      <a class="btn btn-ghost btn-lg" href="/signup?role=sponsor">I fund founders</a>
+    </div>
+    <div class="trust" data-hero>
+      <div class="faces">
+        <img src="/static/img/avatars/b1.jpg" alt=""><img src="/static/img/avatars/a1.jpg" alt=""><img src="/static/img/avatars/b3.jpg" alt=""><img src="/static/img/avatars/a2.jpg" alt="">
+      </div>
+      <span>From first idea to first cheque, at every stage</span>
+    </div>
   </div>
-  <p class="muted small">{{ stats.ideas }} ideas · {{ stats.programs }} programs · {{ stats.sponsors }} sponsors</p>
+  <div class="hero-art">
+    <div class="hero-photo" data-parallax><img src="/static/img/hero.jpg" alt="A founder smiling beside her laptop"></div>
+    <div class="float f1 glass" data-float="0">
+      <span class="label">Funding readiness</span>
+      <b>82<span class="faint small"> / 100</span></b>
+      <div class="mini-bar"><i></i></div>
+    </div>
+    <div class="float f2 glass" data-float="1">
+      <div class="row">
+        <img class="avatar square" src="/static/brand/mark.svg" alt="">
+        <div><span class="label">New match</span><b style="font-size:1rem">Climate grant · 91% fit</b></div>
+      </div>
+    </div>
+    <div class="float f3 glass" data-float="2">
+      <div class="row">
+        <img class="avatar" src="/static/img/avatars/a3.jpg" alt="">
+        <div><span class="label">Intro requested</span><b style="font-size:1rem">Seed fund wants to talk</b></div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<section class="grid-3">
-  <div class="card">
-    <h3>1 · Describe the idea</h3>
-    <p>A guided form covering problem, solution, team, traction and the ask. Add your strongest pitch-deck slide if you have one.</p>
+<section class="stats glass" data-reveal>
+  <div><b data-count="{{ stats.programs }}">{{ stats.programs }}</b><span>funding programs open</span></div>
+  <div><b data-count="{{ stats.sponsors }}">{{ stats.sponsors }}</b><span>funders on SeedBridge</span></div>
+  <div><b data-count="{{ stats.ideas }}">{{ stats.ideas }}</b><span>ideas reviewed</span></div>
+  <div><b>5 min</b><span>from idea to matches</span></div>
+</section>
+
+<section class="section" id="how">
+  <div class="section-title" data-reveal>
+    <p class="eyebrow">How it works</p>
+    <h2>From "I have an idea" to "they want to talk"</h2>
+    <p class="muted">No pitch-deck jargon, no guessing which funders to try. Three steps.</p>
   </div>
-  <div class="card">
-    <h3>2 · Get an honest review</h3>
-    <p>Six scored dimensions, the gaps an investor will spot, and the three edits that will raise your score most.</p>
-  </div>
-  <div class="card">
-    <h3>3 · Apply where you fit</h3>
-    <p>Programs ranked by real fit, with eligibility problems flagged up front. One click drafts a tailored application.</p>
+  <div class="steps-3" data-stagger>
+    <div class="step-card glass">
+      <div class="step-num">1</div>
+      <h3>Tell us about your idea</h3>
+      <p class="muted">A friendly, step-by-step form: the problem, your solution, your team and where you are now, from just an idea to a live business.</p>
+    </div>
+    <div class="step-card glass">
+      <div class="step-num">2</div>
+      <h3>Get an honest review</h3>
+      <p class="muted">See your readiness score, what a panel will ask, how your market looks, and the three changes that will help you most.</p>
+    </div>
+    <div class="step-card glass">
+      <div class="step-num">3</div>
+      <h3>Apply where you fit</h3>
+      <p class="muted">Ranked matches with the eligibility problems spelled out, and a tailored application drafted in one click.</p>
+    </div>
   </div>
 </section>
 
-<section class="card models">
-  <h2>Each model does the job it's best at</h2>
-  <table class="table">
-    <thead><tr><th>Step</th><th>Model</th><th>Why this model</th></tr></thead>
-    <tbody>
-      <tr><td>Structure the application</td><td><code>{{ config.MODELS.intake }}</code></td><td>Fast and cheap, runs on every submission</td></tr>
-      <tr><td>Find missing information</td><td><code>{{ config.MODELS.gaps }}</code></td><td>Small model, good at checklists</td></tr>
-      <tr><td>Read pitch-deck slide</td><td><code>{{ config.MODELS.vision }}</code></td><td>Vision-language model</td></tr>
-      <tr><td>Rank sponsor matches</td><td><code>{{ config.MODELS.embed }}</code> + <code>{{ config.MODELS.match }}</code></td><td>Embeddings shortlist, Super explains the fit</td></tr>
-      <tr><td>Investor-readiness review and drafts</td><td><code>{{ config.MODELS.review }}</code></td><td>Heaviest reasoning, used only where it matters</td></tr>
-    </tbody>
-  </table>
+<section class="section split">
+  <div class="photo" data-reveal><img src="/static/img/tea.jpg" alt="Workers harvesting tea on green hills" loading="lazy"></div>
+  <div data-reveal>
+    <p class="eyebrow">For founders</p>
+    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem)">Know where you stand before you apply</h2>
+    <p class="muted">Most applications fail on things nobody tells you: the wrong funder, a missing number, a budget that doesn't add up. SeedBridge spots them first.</p>
+    <ul class="ticks">
+      <li>A readiness score judged against what funders expect at your stage</li>
+      <li>Live research on your market and competitors, with sources</li>
+      <li>Applications drafted from your own facts, never invented ones</li>
+    </ul>
+    <a class="btn" href="/signup?role=founder">Start for free</a>
+  </div>
+</section>
+
+<section class="section split reverse" id="funders">
+  <div class="photo" data-reveal><img src="/static/img/sponsors.jpg" alt="A team listening to a presentation" loading="lazy"></div>
+  <div data-reveal>
+    <p class="eyebrow">For funders</p>
+    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem)">A shortlist, not a slush pile</h2>
+    <p class="muted">Publish your grant, fund, prize or accelerator. Every founder who shares their idea is checked against your criteria, and you see the best fits first, already reviewed.</p>
+    <ul class="ticks">
+      <li>Eligibility checked automatically: stage, sector, country and ticket size</li>
+      <li>A plain-English reason for every match</li>
+      <li>Shortlist, decline or request an intro in one click</li>
+    </ul>
+    <a class="btn" href="/signup?role=sponsor">List a program</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-title" data-reveal>
+    <p class="eyebrow">Built for real businesses</p>
+    <h2>Every stage, every kind of founder</h2>
+  </div>
+  <div class="stories" data-stagger>
+    <article class="story glass">
+      <img class="cover" src="/static/img/tea.jpg" alt="" loading="lazy">
+      <div class="body">
+        <span class="chip brand">Pre-seed</span>
+        <h3 style="margin-top:10px">Agritech in the dry zone</h3>
+        <p class="muted quote">An irrigation pilot gets matched to a climate grant, with the impact numbers the panel scores on.</p>
+      </div>
+    </article>
+    <article class="story glass">
+      <img class="cover" src="/static/img/cafe.jpg" alt="" loading="lazy">
+      <div class="body">
+        <span class="chip brand">Live business</span>
+        <h3 style="margin-top:10px">A café ready to grow</h3>
+        <p class="muted quote">A trading business finds growth finance that fits its cash flow, not venture capital it doesn't need.</p>
+      </div>
+    </article>
+    <article class="story glass">
+      <img class="cover" src="/static/img/pitch.jpg" alt="" loading="lazy">
+      <div class="body">
+        <span class="chip brand">Seed</span>
+        <h3 style="margin-top:10px">Fintech with traction</h3>
+        <p class="muted quote">Growing revenue meets a seed fund looking for exactly that, with the application tailored to its criteria.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="cta-band glass" data-reveal>
+  <h2>Ready to see how fundable your idea is?</h2>
+  <p class="muted">It's free, it takes a few minutes, and you choose who sees your idea.</p>
+  <div class="cta-row" style="justify-content:center">
+    <a class="btn btn-lg" href="/signup?role=founder">Get my free review</a>
+  </div>
 </section>
 {% endblock %}
