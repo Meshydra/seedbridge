@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} · SeedBridge{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="/dashboard">Your programs</a></p>
+    <h1>{{ p.name }}</h1>
+    <p class="muted">{{ p.kind }} · {{ p.min_usd | money }}–{{ p.max_usd | money }}{% if p.deadline %} · closes {{ p.deadline }}{% endif %}</p>
+    <p class="tags">{% for s in (p.sectors or 'Any sector').split(', ') %}<span class="tag">{{ s }}</span>{% endfor %}{% for s in (p.stages or 'Any stage').split(', ') %}<span class="tag">{{ s }}</span>{% endfor %}<span class="tag">{{ p.countries or 'Any country' }}</span></p>
+  </div>
+</div>
+
+{% if apps %}
+<section class="card">
+  <h2>Applications</h2>
+  <table class="table">
+    <thead><tr><th>Idea</th><th>Status</th><th>Updated</th></tr></thead>
+    <tbody>{% for a in apps %}<tr><td><a href="/applications/{{ a.id }}">{{ a.title }}</a></td><td>{{ a.status | capitalize }}</td><td class="muted">{{ a.updated_at[:10] }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="section-head"><h2>Matched founders</h2><span class="muted small">Only ideas their founders chose to share</span></div>
+  {% if matches %}
+  <div class="matches">
+    {% for m in matches %}
+    {% set review = m.review_json | loads({}) %}
+    {% set concerns = m.concerns | loads([]) %}
+    <a class="match link-card {{ 'weak' if m.fit_score < 50 }}" href="/programs/{{ p.id }}/ideas/{{ m.idea_id }}">
+      <div class="fit"><b>{{ m.fit_score }}</b><span>fit</span></div>
+      <div class="match-body">
+        <h3>{{ m.title }}</h3>
+        <p class="small muted">{{ m.sector }} · {{ m.stage }} · {{ m.country }} · asks {{ m.ask_usd | money }}{% if review.overall is defined %} · readiness {{ review.overall }}/100{% endif %}</p>
+        <p>{{ m.reason }}</p>
+        {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted" {% if not matches %}data-poll-reload="8000"{% endif %}>No matches yet. Matching runs when you publish and whenever a founder submits an idea.</p>
+  {% endif %}
+</section>
+{% endblock %}

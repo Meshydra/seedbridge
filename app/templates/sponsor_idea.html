@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ idea.title }} · SeedBridge{% endblock %}
+{% block content %}
+{% set review = idea.review_json | loads({}) %}
+{% set profile = idea.profile_json | loads({}) %}
+{% set concerns = match.concerns | loads([]) %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="/programs/{{ p.id }}">{{ p.name }}</a></p>
+    <h1>{{ idea.title }}</h1>
+    <p class="muted">{{ idea.one_liner or '' }}</p>
+    <p class="tags"><span class="tag">{{ idea.sector }}</span><span class="tag">{{ idea.stage }}</span><span class="tag">{{ idea.country }}</span><span class="tag">Asks {{ idea.ask_usd | money }}</span></p>
+  </div>
+  <div class="fit big"><b>{{ match.fit_score }}</b><span>fit for this program</span></div>
+</div>
+<section class="card">
+  <h2>Why it matched</h2>
+  <p>{{ match.reason }}</p>
+  {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+</section>
+{% if review %}<section class="card">{% include "_review.html" %}</section>{% endif %}
+<section class="card">
+  <h2>The application</h2>
+  <dl class="kv">
+    <dt>Summary</dt><dd>{{ profile.summary }}</dd>
+    <dt>Problem</dt><dd>{{ idea.problem or '—' }}</dd>
+    <dt>Solution</dt><dd>{{ idea.solution or '—' }}</dd>
+    <dt>Business model</dt><dd>{{ idea.business_model or '—' }}</dd>
+    <dt>Team</dt><dd>{{ idea.team or '—' }}</dd>
+    <dt>Traction</dt><dd>{{ idea.traction or '—' }}</dd>
+    <dt>Use of funds</dt><dd>{{ idea.use_of_funds or '—' }}</dd>
+  </dl>
+  <p class="small muted">Founder contact details are shared once they apply and you request an intro.</p>
+</section>
+{% endblock %}

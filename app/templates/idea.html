@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ idea.title }} · SeedBridge{% endblock %}
+{% block content %}
+{% set profile = idea.profile_json | loads({}) %}
+{% set gaps = idea.gaps_json | loads({}) %}
+{% set deck = idea.deck_json | loads(none) %}
+{% set review = idea.review_json | loads({}) %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="/dashboard">Your ideas</a></p>
+    <h1>{{ idea.title }}</h1>
+    <p class="muted">{{ idea.one_liner or '' }}</p>
+    <p class="tags"><span class="tag">{{ idea.sector }}</span><span class="tag">{{ idea.stage }}</span><span class="tag">{{ idea.country }}</span><span class="tag">Ask {{ idea.ask_usd | money }}</span></p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-ghost" href="/ideas/{{ idea.id }}/edit">Edit</a>
+    <form method="post" action="/ideas/{{ idea.id }}/share" class="inline"><button class="btn btn-ghost">{{ 'Hide from sponsors' if idea.share else 'Share with sponsors' }}</button></form>
+  </div>
+</div>
+
+{% if idea.status in ('pending', 'running') %}
+<div class="card progress" data-poll="/ideas/{{ idea.id }}/status">
+  <h2>The models are reviewing your idea</h2>
+  <ol class="steps">
+    {% for key in ['intake', 'gaps'] + (['vision'] if idea.deck_path else []) + ['review', 'embed', 'match'] %}
+    {% set done = steps | selectattr('step', 'equalto', key) | list %}
+    <li data-step="{{ key }}" class="{{ 'done' if done }}"><span>{{ STEP_LABELS[key] }}</span><code>{{ config.MODELS[key] }}</code></li>
+    {% endfor %}
+  </ol>
+</div>
+{% elif idea.status == 'error' %}
+<div class="card error-card">
+  <h2>The review stopped part-way</h2>
+  <p>One model call failed; the details are in the table below. Results from steps that finished are kept.</p>
+  <form method="post" action="/ideas/{{ idea.id }}/rerun"><button class="btn">Try again</button></form>
+</div>
+{% endif %}
+
+{% if review %}<section class="card">{% include "_review.html" %}</section>{% endif %}
+
+{% if gaps %}
+<section class="card">
+  <div class="section-head"><h2>What a panel will ask</h2><span class="pill">{{ gaps.completeness }}% complete</span></div>
+  {% if gaps.missing %}
+  <ul class="gaps">{% for m in gaps.missing %}<li><b>{{ m.field }}</b> {{ m.why }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if gaps.questions %}<h3>Have answers ready for</h3><ol>{% for q in gaps.questions %}<li>{{ q }}</li>{% endfor %}</ol>{% endif %}
+  <a class="btn btn-ghost" href="/ideas/{{ idea.id }}/edit">Improve the application</a>
+</section>
+{% endif %}
+
+{% if idea.status == 'done' %}
+<section class="card">
+  <div class="section-head"><h2>Programs that fit</h2><span class="muted small">{{ 'Visible to these sponsors' if idea.share else 'Hidden from sponsors' }}</span></div>
+  {% if matches %}
+  <div class="matches">
+    {% for m in matches %}
+    {% set concerns = m.concerns | loads([]) %}
+    <div class="match {{ 'weak' if m.fit_score < 50 }}">
+      <div class="fit"><b>{{ m.fit_score }}</b><span>fit</span></div>
+      <div class="match-body">
+        <h3>{{ m.name }}</h3>
+        <p class="small muted">{{ m.kind }} · {{ m.sponsor_org or m.sponsor_name }} · {{ m.min_usd | money }}–{{ m.max_usd | money }}{% if m.deadline %} · closes {{ m.deadline }}{% endif %}</p>
+        <p>{{ m.reason }}</p>
+        {% if concerns %}<ul class="concerns">{% for c in concerns %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="match-act">
+        {% if m.application_id %}
+          <a class="btn btn-ghost btn-small" href="/applications/{{ m.application_id }}">{{ m.application_status | replace('_', ' ') | capitalize }}</a>
+        {% else %}
+          <form method="post" action="/ideas/{{ idea.id }}/apply/{{ m.program_id }}"><button class="btn btn-small">Draft application</button></form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="muted">No sponsor programs yet. You'll be matched automatically when sponsors publish one.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if profile %}
+<section class="card">
+  <h2>How the models read your idea</h2>
+  <p>{{ profile.summary }}</p>
+  <dl class="kv">
+    <dt>Customer</dt><dd>{{ profile.customer }}</dd>
+    <dt>Business model</dt><dd>{{ profile.business_model }}</dd>
+    {% if profile.keywords %}<dt>Keywords</dt><dd class="tags">{% for k in profile.keywords %}<span class="tag">{{ k }}</span>{% endfor %}</dd>{% endif %}
+    {% if profile.red_flags %}<dt>Red flags</dt><dd><ul class="concerns">{% for f in profile.red_flags %}<li>{{ f }}</li>{% endfor %}</ul></dd>{% endif %}
+  </dl>
+  {% if deck %}
+  <h3>Pitch-deck slide</h3>
+  <p>{{ deck.slide_summary }}</p>
+  {% if deck.numbers %}<ul>{% for n in deck.numbers %}<li>{{ n.label }}: <b>{{ n.value }}</b></li>{% endfor %}</ul>{% endif %}
+  <p class="small muted">Consistency with your written answers: {{ deck.consistency }}</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% set open_trace = idea.status == 'error' %}
+{% include "_trace.html" %}
+{% endblock %}

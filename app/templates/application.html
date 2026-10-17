@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Application · {{ a.program_name }}{% endblock %}
+{% block content %}
+{% set labels = {'drafting': 'Drafting…', 'draft': 'Draft', 'submitted': 'Sent to sponsor', 'shortlisted': 'Shortlisted', 'intro': 'Intro requested', 'declined': 'Declined', 'error': 'Draft failed'} %}
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="{{ '/ideas/%d' % a.idea_id if side == 'founder' else '/programs/%d' % a.program_id }}">{{ a.idea_title if side == 'founder' else a.program_name }}</a></p>
+    <h1>{{ a.idea_title }} → {{ a.program_name }}</h1>
+    <p class="muted">{{ a.kind }} · {{ a.sponsor_org or a.sponsor_name }}</p>
+  </div>
+  <span class="pill {{ 'pill-run' if a.status == 'drafting' else ('pill-bad' if a.status in ('declined','error') else 'pill-good' if a.status in ('shortlisted','intro') else '') }}">{{ labels.get(a.status, a.status) }}</span>
+</div>
+
+{% if a.status == 'drafting' %}
+<div class="card progress" data-poll="/applications/{{ a.id }}/status" data-until="drafting">
+  <h2>Writing your application</h2>
+  <p class="muted"><code>{{ config.MODELS.draft }}</code> is tailoring it to this program. It uses only facts from your idea and marks anything missing as [ADD: …].</p>
+</div>
+{% elif side == 'founder' and a.status in ('draft', 'error') %}
+<form method="post" action="/applications/{{ a.id }}" class="card form">
+  <label>Edit before sending. Replace every <code>[ADD: …]</code> with real details.
+    <textarea name="draft" rows="22" class="mono">{{ a.draft or '' }}</textarea></label>
+  <div class="cta-row">
+    <button class="btn btn-ghost" name="action" value="save">Save draft</button>
+    <button class="btn" name="action" value="submit" data-confirm="Send this application to {{ a.sponsor_org or a.sponsor_name }}? You can't edit it afterwards.">Send to sponsor</button>
+  </div>
+</form>
+{% else %}
+<section class="card"><pre class="letter">{{ a.draft }}</pre></section>
+{% if a.sponsor_note or a.status in ('shortlisted', 'intro', 'declined') %}
+<section class="card">
+  <h2>{{ 'Sponsor response' if side == 'founder' else 'Your decision' }}</h2>
+  <p>{{ labels.get(a.status) }}{% if a.sponsor_note %}: {{ a.sponsor_note }}{% endif %}</p>
+  {% if a.status == 'intro' %}
+    <p class="small">{% if side == 'founder' %}Contact: {{ a.sponsor_name }} · <a href="mailto:{{ a.sponsor_email }}">{{ a.sponsor_email }}</a>{% else %}Founder: {{ a.founder_name }} · <a href="mailto:{{ a.founder_email }}">{{ a.founder_email }}</a>{% endif %}</p>
+  {% endif %}
+</section>
+{% endif %}
+{% if side == 'sponsor' %}
+<form method="post" action="/applications/{{ a.id }}/decision" class="card form">
+  <h2>Respond to the founder</h2>
+  <label>Note (optional)<textarea name="note" rows="3">{{ a.sponsor_note or '' }}</textarea></label>
+  <div class="cta-row">
+    <button class="btn" name="decision" value="intro">Request intro</button>
+    <button class="btn btn-ghost" name="decision" value="shortlisted">Shortlist</button>
+    <button class="btn btn-ghost" name="decision" value="declined">Decline</button>
+  </div>
+</form>
+{% endif %}
+{% endif %}
+{% if side == 'founder' %}{% include "_trace.html" %}{% endif %}
+{% endblock %}

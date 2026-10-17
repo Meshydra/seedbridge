@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Grants · Venture capital · Prizes · Accelerators</p>
+  <h1>Turn a business idea into a funding-ready application, and land it in front of the right sponsor.</h1>
+  <p class="lede">Founders describe their idea once. A team of NVIDIA Nemotron models structures it, finds what's missing, scores it the way a grant panel would, and matches it to programs that actually fit. Sponsors publish programs and receive a ranked, pre-reviewed shortlist.</p>
+  <div class="cta-row">
+    <a class="btn" href="/signup?role=founder">I'm a founder</a>
+    <a class="btn btn-ghost" href="/signup?role=sponsor">I fund founders</a>
+  </div>
+  <p class="muted small">{{ stats.ideas }} ideas · {{ stats.programs }} programs · {{ stats.sponsors }} sponsors</p>
+</section>
+
+<section class="grid-3">
+  <div class="card">
+    <h3>1 · Describe the idea</h3>
+    <p>A guided form covering problem, solution, team, traction and the ask. Add your strongest pitch-deck slide if you have one.</p>
+  </div>
+  <div class="card">
+    <h3>2 · Get an honest review</h3>
+    <p>Six scored dimensions, the gaps an investor will spot, and the three edits that will raise your score most.</p>
+  </div>
+  <div class="card">
+    <h3>3 · Apply where you fit</h3>
+    <p>Programs ranked by real fit, with eligibility problems flagged up front. One click drafts a tailored application.</p>
+  </div>
+</section>
+
+<section class="card models">
+  <h2>Each model does the job it's best at</h2>
+  <table class="table">
+    <thead><tr><th>Step</th><th>Model</th><th>Why this model</th></tr></thead>
+    <tbody>
+      <tr><td>Structure the application</td><td><code>{{ config.MODELS.intake }}</code></td><td>Fast and cheap, runs on every submission</td></tr>
+      <tr><td>Find missing information</td><td><code>{{ config.MODELS.gaps }}</code></td><td>Small model, good at checklists</td></tr>
+      <tr><td>Read pitch-deck slide</td><td><code>{{ config.MODELS.vision }}</code></td><td>Vision-language model</td></tr>
+      <tr><td>Rank sponsor matches</td><td><code>{{ config.MODELS.embed }}</code> + <code>{{ config.MODELS.match }}</code></td><td>Embeddings shortlist, Super explains the fit</td></tr>
+      <tr><td>Investor-readiness review and drafts</td><td><code>{{ config.MODELS.review }}</code></td><td>Heaviest reasoning, used only where it matters</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}

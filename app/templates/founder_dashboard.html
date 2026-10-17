@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Your ideas · SeedBridge{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Your ideas</h1>
+  <a class="btn" href="/ideas/new">New idea</a>
+</div>
+{% if not ideas %}
+  <div class="card empty">
+    <p>No ideas yet. Describe one and the models will review it and find programs that fit.</p>
+    <a class="btn" href="/ideas/new">Describe your first idea</a>
+  </div>
+{% else %}
+<div class="list">
+  {% for i in ideas %}
+  {% set review = i.review_json | loads({}) %}
+  <a class="card list-item" href="/ideas/{{ i.id }}">
+    <div>
+      <h3>{{ i.title }}</h3>
+      <p class="muted">{{ i.one_liner or '' }}</p>
+      <p class="tags"><span class="tag">{{ i.sector }}</span><span class="tag">{{ i.stage }}</span><span class="tag">{{ i.country }}</span></p>
+    </div>
+    <div class="list-stats">
+      {% if i.status in ('pending', 'running') %}<span class="pill pill-run">Reviewing…</span>
+      {% elif i.status == 'error' %}<span class="pill pill-bad">Review failed</span>
+      {% else %}
+        {% if review.overall is defined %}<div class="stat"><b>{{ review.overall }}</b><span>readiness</span></div>{% endif %}
+        {% if i.n_matches %}<div class="stat"><b>{{ i.best_fit }}</b><span>best fit · {{ i.n_matches }} programs</span></div>{% endif %}
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

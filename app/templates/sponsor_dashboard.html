@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Your programs · SeedBridge{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Your programs</h1>
+  <a class="btn" href="/programs/new">New program</a>
+</div>
+{% if not programs %}
+  <div class="card empty">
+    <p>Publish a grant, fund, prize or accelerator. Every founder idea is scored against it, and you get a ranked shortlist.</p>
+    <a class="btn" href="/programs/new">Publish your first program</a>
+  </div>
+{% else %}
+<div class="list">
+  {% for p in programs %}
+  <a class="card list-item" href="/programs/{{ p.id }}">
+    <div>
+      <h3>{{ p.name }}</h3>
+      <p class="muted">{{ p.kind }} · {{ p.min_usd | money }}–{{ p.max_usd | money }}{% if p.deadline %} · closes {{ p.deadline }}{% endif %}</p>
+    </div>
+    <div class="list-stats">
+      <div class="stat"><b>{{ p.strong }}</b><span>strong matches</span></div>
+      <div class="stat"><b>{{ p.apps }}</b><span>applications</span></div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

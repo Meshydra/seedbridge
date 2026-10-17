@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit idea' if idea.id else 'New idea' }} · SeedBridge{% endblock %}
+{% block content %}
+<h1>{{ 'Edit your idea' if idea.id else 'Describe your business idea' }}</h1>
+<p class="muted">Plain language is fine. Numbers help most: customers, prices, pilots, revenue. Leave a field blank rather than guess; the review will tell you what matters.</p>
+<form method="post" action="{{ action }}" enctype="multipart/form-data" class="card form">
+  <fieldset>
+    <legend>The basics</legend>
+    <label>Name of the idea or business<input name="title" required value="{{ idea.title or '' }}"></label>
+    <label>One-line pitch<input name="one_liner" maxlength="200" placeholder="" value="{{ idea.one_liner or '' }}">
+      <span class="hint">What you do, for whom, in one sentence.</span></label>
+    <div class="row-3">
+      <label>Sector<select name="sector">{% for s in config.SECTORS %}<option {{ 'selected' if idea.sector == s }}>{{ s }}</option>{% endfor %}</select></label>
+      <label>Stage<select name="stage">{% for s in config.STAGES %}<option {{ 'selected' if idea.stage == s }}>{{ s }}</option>{% endfor %}</select></label>
+      <label>Country<input name="country" value="{{ idea.country or '' }}" required></label>
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Problem and solution</legend>
+    <label>The problem<textarea name="problem" rows="4">{{ idea.problem or '' }}</textarea>
+      <span class="hint">Who has it, how often, and what it costs them today.</span></label>
+    <label>Your solution<textarea name="solution" rows="4">{{ idea.solution or '' }}</textarea></label>
+    <label>Business model<textarea name="business_model" rows="2">{{ idea.business_model or '' }}</textarea>
+      <span class="hint">Who pays, how much, how often.</span></label>
+  </fieldset>
+  <fieldset>
+    <legend>Evidence</legend>
+    <label>Team<textarea name="team" rows="3">{{ idea.team or '' }}</textarea></label>
+    <label>Traction<textarea name="traction" rows="3">{{ idea.traction or '' }}</textarea>
+      <span class="hint">Pilots, sign-ups, letters of intent, revenue, awards.</span></label>
+  </fieldset>
+  <fieldset>
+    <legend>The ask</legend>
+    <div class="row-2">
+      <label>Funding needed (USD)<input name="ask_usd" inputmode="numeric" value="{{ idea.ask_usd or '' }}"></label>
+      <label>Key pitch-deck slide (optional)<input type="file" name="deck" accept="image/png,image/jpeg,image/webp">
+        <span class="hint">{% if idea.deck_path %}A slide is already attached; upload to replace it.{% else %}PNG or JPG, under 5 MB. Read by the vision model.{% endif %}</span></label>
+    </div>
+    <label>Use of funds<textarea name="use_of_funds" rows="3">{{ idea.use_of_funds or '' }}</textarea></label>
+  </fieldset>
+  <label class="check"><input type="checkbox" name="share" {{ 'checked' if idea.share is not defined or idea.share }}> Let matched sponsors see this idea and its review</label>
+  <button class="btn">{{ 'Save and re-review' if idea.id else 'Submit for review' }}</button>
+</form>
+{% endblock %}

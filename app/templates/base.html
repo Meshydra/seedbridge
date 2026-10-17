@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SeedBridge{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {% if config.DEMO_MODE %}
+  <div class="demo-bar">Demo mode: no Nebius API key is set, so model answers are simulated locally. Add <code>NEBIUS_API_KEY</code> to run the real Nemotron models.</div>
+  {% endif %}
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>SeedBridge</a>
+      <nav>
+        {% if user %}
+          <a href="/dashboard">Dashboard</a>
+          {% if user.role == 'founder' %}<a href="/ideas/new">New idea</a>{% else %}<a href="/programs/new">New program</a>{% endif %}
+          <span class="who">{{ user.name }} · {{ user.role }}</span>
+          <form method="post" action="/logout" class="inline"><button class="link">Log out</button></form>
+        {% else %}
+          <a href="/login">Log in</a>
+          <a class="btn btn-small" href="/signup">Get started</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="wrap footer">Built on NVIDIA Nemotron models served by Nebius Token Factory. AI reviews are guidance, not funding decisions.</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

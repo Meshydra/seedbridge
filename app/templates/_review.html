@@ -1,0 +1,25 @@
+{# Readiness scorecard; shared by the founder view and the sponsor view. Needs `review`. #}
+{% if review %}
+<div class="score-head">
+  <div class="score-ring" style="--v: {{ review.overall or 0 }}"><b>{{ review.overall }}</b><span>/ 100</span></div>
+  <div>
+    <h2>Investor readiness</h2>
+    <p>{{ review.verdict }}</p>
+    {% if review.best_fit %}<p class="tags">Best suited now: {% for k in review.best_fit %}<span class="tag">{{ k }}</span>{% endfor %}</p>{% endif %}
+  </div>
+</div>
+<div class="dims">
+  {% for d in review.dimensions or [] %}
+  <div class="dim">
+    <div class="dim-top"><span>{{ d.name }}</span><b>{{ d.score }}/10</b></div>
+    <div class="bar"><i style="width: {{ (d.score or 0) * 10 }}%"></i></div>
+    <p class="small muted">{{ d.comment }}</p>
+  </div>
+  {% endfor %}
+</div>
+<div class="grid-3 tight">
+  <div><h3>Strengths</h3><ul>{% for s in review.strengths or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  <div><h3>Risks</h3><ul>{% for s in review.risks or [] %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  <div><h3>Fix these first</h3><ol>{% for s in review.improvements or [] %}<li>{{ s }}</li>{% endfor %}</ol></div>
+</div>
+{% endif %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}New program · SeedBridge{% endblock %}
+{% block content %}
+<h1>Publish a funding program</h1>
+<p class="muted">Founders' ideas are matched against what you write here, so be specific about who you fund and what you look for.</p>
+<form method="post" action="/programs/new" class="card form">
+  <fieldset>
+    <legend>Program</legend>
+    <div class="row-2">
+      <label>Program name<input name="name" required></label>
+      <label>Type<select name="kind">{% for k in config.PROGRAM_KINDS %}<option>{{ k }}</option>{% endfor %}</select></label>
+    </div>
+    <label>Description<textarea name="description" rows="3"></textarea></label>
+    <label>What you look for<textarea name="criteria" rows="4"></textarea>
+      <span class="hint">Selection criteria, must-haves, what makes an application stand out.</span></label>
+  </fieldset>
+  <fieldset>
+    <legend>Eligibility</legend>
+    <div class="row-3">
+      <label>Minimum (USD)<input name="min_usd" inputmode="numeric"></label>
+      <label>Maximum (USD)<input name="max_usd" inputmode="numeric"></label>
+      <label>Deadline<input type="date" name="deadline"></label>
+    </div>
+    <label>Countries<input name="countries" placeholder="Any">
+      <span class="hint">Comma-separated, or leave blank for any country.</span></label>
+    <div class="checks"><span class="label">Sectors (none ticked = any)</span>
+      {% for s in config.SECTORS %}<label class="check"><input type="checkbox" name="sectors" value="{{ s }}"> {{ s }}</label>{% endfor %}
+    </div>
+    <div class="checks"><span class="label">Stages (none ticked = any)</span>
+      {% for s in config.STAGES %}<label class="check"><input type="checkbox" name="stages" value="{{ s }}"> {{ s }}</label>{% endfor %}
+    </div>
+  </fieldset>
+  <button class="btn">Publish and match</button>
+</form>
+{% endblock %}
