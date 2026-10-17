@@ -3,20 +3,20 @@
 {% block page %}dashboard{% endblock %}
 {% block content %}
 <div class="page-head" data-reveal>
-  <div class="idea-head">
+  <div class="head-id">
     <img class="avatar lg" src="/u/{{ user.id }}/avatar" alt="">
     <div>
-      <p class="eyebrow">Welcome back</p>
-      <h1>{{ user.name.split()[0] }}'s ideas</h1>
+      <p class="crumb">Welcome back, {{ user.first_name or user.name.split()[0] }}</p>
+      <h1>Your ideas</h1>
     </div>
   </div>
 </div>
 <div class="idea-grid" data-stagger>
   {% for i in ideas %}
   {% set review = i.review_json | loads({}) %}
-  <a class="idea-card glass" href="/ideas/{{ i.id }}" data-lift>
+  <a class="idea-card" href="/ideas/{{ i.id }}">
     <div class="chips" style="margin-top:0"><span class="chip brand">{{ i.stage }}</span><span class="chip">{{ i.sector }}</span></div>
-    <h3 style="font-size:1.15rem;margin-top:6px">{{ i.title }}</h3>
+    <h3>{{ i.title }}</h3>
     <p>{{ i.one_liner or '' }}</p>
     <div class="foot">
       {% if i.status in ('pending', 'running') %}<span class="chip warn">Reviewing…</span>
@@ -28,7 +28,7 @@
     </div>
   </a>
   {% endfor %}
-  <a class="idea-card new-card" href="/ideas/new" data-lift>
+  <a class="idea-card new-card" href="/ideas/new">
     <div><div class="plus">+</div>{{ 'Add another idea' if ideas else 'Describe your first idea' }}</div>
   </a>
 </div>

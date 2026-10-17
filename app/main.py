@@ -1,6 +1,7 @@
 """SeedBridge web app: founders submit ideas, Nemotron models review and match them, sponsors list programs."""
 import hashlib
 import json
+import re
 import uuid
 from html import escape
 from pathlib import Path
@@ -95,17 +96,20 @@ def signup_form(request: Request, role: str = "founder"):
 
 
 @app.post("/signup")
-def signup(request: Request, name: str = Form(...), email: str = Form(...), password: str = Form(...),
-           role: str = Form("founder"), org: str = Form("")):
+def signup(request: Request, first_name: str = Form(...), last_name: str = Form(""), email: str = Form(...),
+           password: str = Form(...), role: str = Form("founder"), org: str = Form("")):
     email = email.strip().lower()
+    first_name, last_name = first_name.strip(), last_name.strip()
+    name = f"{first_name} {last_name}".strip()
     if role not in ("founder", "sponsor"):
         raise HTTPException(400)
     if len(password) < 8:
         return render(request, "auth.html", mode="signup", role=role, error="Use at least 8 characters.")
     if db.one("SELECT id FROM users WHERE email = ?", email):
         return render(request, "auth.html", mode="signup", role=role, error="That email already has an account.")
-    uid = db.run("INSERT INTO users (email, name, role, org, password_hash, created_at) VALUES (?,?,?,?,?,?)",
-                 email, name.strip(), role, org.strip() or None, auth.hash_password(password), db.now())
+    uid = db.run("INSERT INTO users (email, name, first_name, last_name, role, org, password_hash, created_at)"
+                 " VALUES (?,?,?,?,?,?,?,?)", email, name, first_name, last_name or None, role,
+                 org.strip() or None, auth.hash_password(password), db.now())
     request.session["uid"] = uid
     return back("/programs/new" if role == "sponsor" else "/ideas/new")
 
@@ -386,7 +390,7 @@ def program_view(request: Request, pid: int):
     p = _own_program(user, pid)
     matches = db.all_(
         "SELECT m.*, i.title, i.one_liner, i.sector, i.stage, i.country, i.ask_usd, i.review_json,"
-        " i.user_id AS founder_id, f.name AS founder_name"
+        " i.user_id AS founder_id, f.name AS founder_name, f.visibility AS founder_visibility"
         " FROM matches m JOIN ideas i ON i.id=m.idea_id JOIN users f ON f.id=i.user_id"
         " WHERE m.program_id=? AND i.share=1"
         " ORDER BY m.fit_score DESC", pid)
@@ -401,7 +405,9 @@ def program_idea(request: Request, pid: int, idea_id: int):
     """Sponsor's view of a matched idea: only if the founder shares it and it matched this program."""
     user = auth.require(request, "sponsor")
     p = _own_program(user, pid)
-    idea = db.one("SELECT i.*, u.name AS founder_name FROM ideas i JOIN users u ON u.id=i.user_id"
+    idea = db.one("SELECT i.*, u.name AS founder_name, u.visibility AS founder_visibility, u.job_title AS founder_title,"
+                  " u.location AS founder_location, u.connections_json AS founder_connections"
+                  " FROM ideas i JOIN users u ON u.id=i.user_id"
                   " WHERE i.id=? AND i.share=1", idea_id)
     match = db.one("SELECT * FROM matches WHERE idea_id=? AND program_id=?", idea_id, pid)
     if not idea or not match:
@@ -436,20 +442,41 @@ def avatar(uid: int):
     return Response(svg, media_type="image/svg+xml", headers={"Cache-Control": "private, max-age=300"})
 
 
+PROVIDERS = {
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "google": "Google",
+}
+
+
+def _profile_row(uid):
+    row = db.one("SELECT id, email, name, first_name, last_name, role, org, bio, website, avatar_path, job_title,"
+                 " phone, location, visibility, connections_json, created_at FROM users WHERE id=?", uid)
+    if row and not row["first_name"]:
+        parts = (row["name"] or "").split(" ", 1)
+        row["first_name"], row["last_name"] = parts[0], (parts[1] if len(parts) > 1 else "")
+    row["connections"] = db.loads(row.pop("connections_json"), {})
+    return row
+
+
 @app.get("/profile", response_class=HTMLResponse)
 def profile_form(request: Request):
     user = auth.require(request)
-    full = db.one("SELECT id, email, name, role, org, bio, website, avatar_path FROM users WHERE id=?", user["id"])
-    return render(request, "profile.html", me=full)
+    return render(request, "profile.html", me=_profile_row(user["id"]), providers=PROVIDERS)
 
 
 @app.post("/profile")
 async def profile_save(request: Request):
     user = auth.require(request)
     form = await request.form()
-    name = (form.get("name") or "").strip()
-    if not name:
-        raise HTTPException(400, "Name is required.")
+    val = lambda k: (form.get(k) or "").strip()
+    first, last, email = val("first_name"), val("last_name"), val("email").lower()
+    if not first or not email:
+        raise HTTPException(400, "First name and email are required.")
+    clash = db.one("SELECT id FROM users WHERE email=? AND id<>?", email, user["id"])
+    if clash:
+        request.session["flash"] = "That email is already used by another account."
+        return back("/profile")
     photo = form.get("photo")
     avatar_path = None
     if hasattr(photo, "filename") and photo.filename:
@@ -462,9 +489,34 @@ async def profile_save(request: Request):
         target = config.UPLOAD_DIR / f"avatar-{user['id']}-{uuid.uuid4().hex[:8]}{ext}"
         target.write_bytes(data)
         avatar_path = str(target)
-    db.run("UPDATE users SET name=?, org=?, bio=?, website=?, avatar_path=COALESCE(?, avatar_path) WHERE id=?",
-           name, (form.get("org") or "").strip() or None, (form.get("bio") or "").strip() or None,
-           (form.get("website") or "").strip() or None, avatar_path, user["id"])
+    visibility = "private" if val("visibility") == "private" else "public"
+    db.run("UPDATE users SET first_name=?, last_name=?, name=?, email=?, job_title=?, org=?, phone=?, location=?,"
+           " website=?, bio=?, visibility=?, avatar_path=COALESCE(?, avatar_path) WHERE id=?",
+           first, last or None, f"{first} {last}".strip(), email, val("job_title") or None, val("org") or None,
+           val("phone") or None, val("location") or None, val("website") or None, val("bio")[:600] or None,
+           visibility, avatar_path, user["id"])
     if form.get("remove_photo"):
         db.run("UPDATE users SET avatar_path=NULL WHERE id=?", user["id"])
     return back("/profile", "Profile saved.", request)
+
+
+@app.post("/profile/connect/{provider}")
+def profile_connect(request: Request, provider: str):
+    """Demo account linking: records a connection without OAuth so the flow can be shown.
+    Replace with real OAuth (LinkedIn, GitHub, Google) before launch."""
+    user = auth.require(request)
+    if provider not in PROVIDERS:
+        raise HTTPException(404)
+    row = _profile_row(user["id"])
+    conns = row["connections"]
+    if provider in conns:
+        conns.pop(provider)
+        msg = f"{PROVIDERS[provider]} disconnected."
+    else:
+        slug = re.sub(r"[^a-z0-9]+", "-", f"{row['first_name']} {row['last_name']}".lower()).strip("-")
+        handle = {"linkedin": f"linkedin.com/in/{slug}", "github": f"github.com/{slug.replace('-', '')}",
+                  "google": row["email"]}[provider]
+        conns[provider] = {"handle": handle, "since": db.now()[:10]}
+        msg = f"{PROVIDERS[provider]} connected."
+    db.run("UPDATE users SET connections_json=? WHERE id=?", json.dumps(conns), user["id"])
+    return back("/profile#connections", msg, request)

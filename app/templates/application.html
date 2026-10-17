@@ -5,7 +5,7 @@
 {% set labels = {'drafting': 'Writing your draft…', 'draft': 'Draft', 'submitted': 'Sent', 'shortlisted': 'Shortlisted', 'intro': 'Intro requested', 'declined': 'Declined', 'error': "Draft didn't finish"} %}
 <div class="page-head" data-reveal>
   <div>
-    <p class="eyebrow"><a href="{{ '/ideas/%d' % a.idea_id if side == 'founder' else '/programs/%d' % a.program_id }}">{{ a.idea_title if side == 'founder' else a.program_name }}</a></p>
+    <p class="crumb"><a href="{{ '/ideas/%d' % a.idea_id if side == 'founder' else '/programs/%d' % a.program_id }}">{{ a.idea_title if side == 'founder' else a.program_name }}</a> / Application</p>
     <h1>{{ a.idea_title }} → {{ a.program_name }}</h1>
     <div class="who-row"><img class="avatar sm" src="/u/{{ a.sponsor_id }}/avatar" alt="">{{ a.sponsor_org or a.sponsor_name }} · {{ a.kind }}</div>
   </div>
@@ -13,13 +13,13 @@
 </div>
 
 {% if a.status == 'drafting' %}
-<section class="glass card processing" data-poll="/applications/{{ a.id }}/status" data-until="drafting" data-pop>
-  <div class="orb" data-orb><img src="/static/brand/mark.svg" alt=""></div>
+<section class="card processing" data-poll="/applications/{{ a.id }}/status" data-until="drafting" data-pop>
+  <img class="mark" src="/static/brand/mark.svg" alt="">
   <h2>Writing your application</h2>
   <p class="muted">Tailoring it to {{ a.sponsor_org or a.sponsor_name }}'s criteria using only what you told us. Anything missing is marked so you can fill it in.</p>
 </section>
 {% elif side == 'founder' and a.status in ('draft', 'error') %}
-<form method="post" action="/applications/{{ a.id }}" class="glass card" data-reveal>
+<form method="post" action="/applications/{{ a.id }}" class="card" data-reveal>
   <div class="section-head"><h2 style="margin:0">Review and edit</h2><span class="muted small">Replace every <code>[ADD: …]</code> with real details before sending.</span></div>
   <textarea name="draft" class="letter-edit" aria-label="Application text">{{ a.draft or '' }}</textarea>
   <div class="cta-row" style="margin-top:14px">
@@ -28,9 +28,9 @@
   </div>
 </form>
 {% else %}
-<section class="glass card" data-reveal><pre class="letter">{{ a.draft }}</pre></section>
+<section class="card" data-reveal><pre class="letter">{{ a.draft }}</pre></section>
 {% if a.sponsor_note or a.status in ('shortlisted', 'intro', 'declined') %}
-<section class="glass card" data-reveal>
+<section class="card" data-reveal>
   <h2>{{ 'Their response' if side == 'founder' else 'Your decision' }}</h2>
   <p><b>{{ labels.get(a.status) }}</b>{% if a.sponsor_note %}: {{ a.sponsor_note }}{% endif %}</p>
   {% if a.status == 'intro' %}
@@ -42,7 +42,7 @@
 </section>
 {% endif %}
 {% if side == 'sponsor' %}
-<form method="post" action="/applications/{{ a.id }}/decision" class="glass card" data-reveal>
+<form method="post" action="/applications/{{ a.id }}/decision" class="card" data-reveal>
   <h2>Reply to {{ a.founder_name }}</h2>
   <label>Message (optional)<textarea name="note" rows="3">{{ a.sponsor_note or '' }}</textarea></label>
   <div class="cta-row">

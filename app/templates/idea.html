@@ -9,7 +9,7 @@
 {% set market = idea.research_json | loads(none) %}
 <div class="page-head" data-reveal>
   <div>
-    <p class="eyebrow"><a href="/dashboard">My ideas</a></p>
+    <p class="crumb"><a href="/dashboard">Ideas</a> / {{ idea.title }}</p>
     <h1>{{ idea.title }}</h1>
     <p class="muted" style="margin:0">{{ idea.one_liner or '' }}</p>
     <div class="chips"><span class="chip brand">{{ idea.stage }}</span><span class="chip">{{ idea.product_status or 'Product status not set' }}</span><span class="chip">{{ idea.sector }}</span><span class="chip">{{ idea.country }}</span><span class="chip">Asking {{ idea.ask_usd | money }}</span></div>
@@ -21,8 +21,8 @@
 </div>
 
 {% if idea.status in ('pending', 'running') %}
-<section class="glass card processing" data-poll="/ideas/{{ idea.id }}/status" data-pop>
-  <div class="orb" data-orb><img src="/static/brand/mark.svg" alt=""></div>
+<section class="card processing" data-poll="/ideas/{{ idea.id }}/status" data-pop>
+  <img class="mark" src="/static/brand/mark.svg" alt="">
   <h2>We're reviewing {{ idea.title }}</h2>
   <p class="muted">This usually takes under a minute. You can leave this page; we'll keep working.</p>
   <ol class="psteps">
@@ -32,17 +32,17 @@
   </ol>
 </section>
 {% elif idea.status == 'error' %}
-<section class="glass card" data-pop>
+<section class="card" data-pop>
   <h2>Something interrupted the review</h2>
   <p class="muted">It's usually temporary. Anything that finished is saved below.</p>
   <form method="post" action="/ideas/{{ idea.id }}/rerun"><button class="btn">Try again</button></form>
 </section>
 {% endif %}
 
-{% if review %}<section class="glass card" data-reveal>{% include "_review.html" %}</section>{% endif %}
+{% if review %}<section class="card" data-reveal>{% include "_review.html" %}</section>{% endif %}
 
 {% if idea.status == 'done' %}
-<section class="glass card" data-reveal>
+<section class="card" data-reveal>
   <div class="section-head">
     <div><h2 style="margin:0">Funders that fit</h2><p class="muted small" style="margin:0">{{ 'Matched funders can see your idea.' if idea.share else 'Your idea is hidden from funders.' }}</p></div>
   </div>
@@ -74,7 +74,7 @@
 
 <div class="grid cols-2">
   {% if gaps %}
-  <section class="glass card" data-reveal>
+  <section class="card" data-reveal>
     <div class="section-head"><h2 style="margin:0">What a panel will ask</h2><span class="chip {{ 'brand' if gaps.completeness >= 70 else 'warn' }}">{{ gaps.completeness }}% complete</span></div>
     {% if gaps.questions %}
     <ol class="todo">{% for q in gaps.questions %}<li><span class="n">{{ loop.index }}</span><span>{{ q }}</span></li>{% endfor %}</ol>
@@ -87,7 +87,7 @@
   </section>
   {% endif %}
 
-  <section class="glass card" data-reveal>
+  <section class="card" data-reveal>
     {% if market %}
       <h2>Your market</h2>
       <p>{{ market.snapshot }}</p>

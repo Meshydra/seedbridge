@@ -3,19 +3,19 @@
 {% block page %}dashboard{% endblock %}
 {% block content %}
 <div class="page-head" data-reveal>
-  <div class="idea-head">
+  <div class="head-id">
     <img class="avatar lg square" src="/u/{{ user.id }}/avatar" alt="">
     <div>
-      <p class="eyebrow">{{ user.org or 'Funder' }}</p>
+      <p class="crumb">{{ user.org or 'Funder' }}</p>
       <h1>Your programs</h1>
     </div>
   </div>
 </div>
 <div class="idea-grid" data-stagger>
   {% for p in programs %}
-  <a class="idea-card glass" href="/programs/{{ p.id }}" data-lift>
+  <a class="idea-card" href="/programs/{{ p.id }}">
     <div class="chips" style="margin-top:0"><span class="chip brand">{{ p.kind }}</span>{% if p.deadline %}<span class="chip">Closes {{ p.deadline }}</span>{% endif %}</div>
-    <h3 style="font-size:1.15rem;margin-top:6px">{{ p.name }}</h3>
+    <h3>{{ p.name }}</h3>
     <p>{{ p.min_usd | money }} – {{ p.max_usd | money }}</p>
     <div class="foot">
       <div class="kpi"><b>{{ p.strong }}</b><span>strong matches</span></div>
@@ -23,7 +23,7 @@
     </div>
   </a>
   {% endfor %}
-  <a class="idea-card new-card" href="/programs/new" data-lift>
+  <a class="idea-card new-card" href="/programs/new">
     <div><div class="plus">+</div>{{ 'List another program' if programs else 'List your first program' }}</div>
   </a>
 </div>

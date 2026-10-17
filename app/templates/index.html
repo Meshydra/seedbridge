@@ -3,86 +3,79 @@
 {% block content %}
 <section class="hero">
   <div>
-    <p class="eyebrow" data-hero>Grants · Investors · Accelerators · Prizes</p>
-    <h1 data-split>Your idea deserves funding. <span class="grad">We'll get it ready.</span></h1>
-    <p class="lede" data-hero>Describe your business once. SeedBridge reviews it the way a funding panel would, shows you exactly what to fix, and puts you in front of the grants and investors that actually fit.</p>
+    <p class="eyebrow" data-hero>Grants, investors and accelerators</p>
+    <h1 data-hero>Get your business idea <em>ready for funding</em>, and in front of the people who fund it.</h1>
+    <p class="lede" data-hero>Describe your business once. SeedBridge reviews it the way a funding panel would, tells you what to fix, and matches you with the programs you're actually eligible for.</p>
     <div class="cta-row" data-hero>
-      <a class="btn btn-lg" href="/signup?role=founder">Get my free review</a>
-      <a class="btn btn-ghost btn-lg" href="/signup?role=sponsor">I fund founders</a>
+      <a class="btn btn-lg" href="/signup?role=founder">Get a free review</a>
+      <a class="btn btn-ghost btn-lg" href="/signup?role=sponsor">List a funding program</a>
     </div>
     <div class="trust" data-hero>
       <div class="faces">
         <img src="/static/img/avatars/b1.jpg" alt=""><img src="/static/img/avatars/a1.jpg" alt=""><img src="/static/img/avatars/b3.jpg" alt=""><img src="/static/img/avatars/a2.jpg" alt="">
       </div>
-      <span>From first idea to first cheque, at every stage</span>
+      <span>For first-time founders and growing businesses alike</span>
     </div>
   </div>
-  <div class="hero-art">
-    <div class="hero-photo" data-parallax><img src="/static/img/hero.jpg" alt="A founder smiling beside her laptop"></div>
-    <div class="float f1 glass" data-float="0">
+  <div class="hero-art" data-hero-art>
+    <div class="hero-photo"><img src="/static/img/hero.jpg" alt="A founder beside her laptop in a bright office"></div>
+    <div class="float f1 glass" data-float>
       <span class="label">Funding readiness</span>
-      <b>82<span class="faint small"> / 100</span></b>
-      <div class="mini-bar"><i></i></div>
+      <b class="tabular">82</b> <span class="faint small">/ 100</span>
+      <div class="meter"><i></i></div>
     </div>
-    <div class="float f2 glass" data-float="1">
-      <div class="row">
-        <img class="avatar square" src="/static/brand/mark.svg" alt="">
-        <div><span class="label">New match</span><b style="font-size:1rem">Climate grant · 91% fit</b></div>
-      </div>
-    </div>
-    <div class="float f3 glass" data-float="2">
+    <div class="float f2 glass" data-float>
       <div class="row">
         <img class="avatar" src="/static/img/avatars/a3.jpg" alt="">
-        <div><span class="label">Intro requested</span><b style="font-size:1rem">Seed fund wants to talk</b></div>
+        <div><span class="label">Seed fund</span><b style="font-size:var(--t-sm)">Requested an intro</b></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="stats glass" data-reveal>
-  <div><b data-count="{{ stats.programs }}">{{ stats.programs }}</b><span>funding programs open</span></div>
-  <div><b data-count="{{ stats.sponsors }}">{{ stats.sponsors }}</b><span>funders on SeedBridge</span></div>
-  <div><b data-count="{{ stats.ideas }}">{{ stats.ideas }}</b><span>ideas reviewed</span></div>
-  <div><b>5 min</b><span>from idea to matches</span></div>
+<section class="facts" data-reveal>
+  <div><b data-count="{{ stats.programs }}">{{ stats.programs }}</b><span>Open funding programs</span></div>
+  <div><b data-count="{{ stats.sponsors }}">{{ stats.sponsors }}</b><span>Funders listing programs</span></div>
+  <div><b data-count="{{ stats.ideas }}">{{ stats.ideas }}</b><span>Ideas reviewed</span></div>
+  <div><b>5</b><span>Funding stages, from idea to trading</span></div>
 </section>
 
-<section class="section" id="how">
-  <div class="section-title" data-reveal>
+<section class="section" id="how" style="border-top:0">
+  <div class="section-intro" data-reveal>
     <p class="eyebrow">How it works</p>
-    <h2>From "I have an idea" to "they want to talk"</h2>
-    <p class="muted">No pitch-deck jargon, no guessing which funders to try. Three steps.</p>
+    <h2>From "I have an idea" to "they'd like to talk"</h2>
   </div>
   <div class="steps-3" data-stagger>
-    <div class="step-card glass">
-      <div class="step-num">1</div>
-      <h3>Tell us about your idea</h3>
-      <p class="muted">A friendly, step-by-step form: the problem, your solution, your team and where you are now, from just an idea to a live business.</p>
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h3>Tell us about the business</h3>
+      <p class="muted">Five short steps: the basics, where you are now (from just an idea to a trading business), the problem you solve, your team and the funding you need.</p>
     </div>
-    <div class="step-card glass">
-      <div class="step-num">2</div>
-      <h3>Get an honest review</h3>
-      <p class="muted">See your readiness score, what a panel will ask, how your market looks, and the three changes that will help you most.</p>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h3>See where you stand</h3>
+      <p class="muted">A readiness score for your stage, the questions a panel will ask, and the three changes that help most.</p>
     </div>
-    <div class="step-card glass">
-      <div class="step-num">3</div>
+    <div class="step-card">
+      <div class="step-num">03</div>
       <h3>Apply where you fit</h3>
-      <p class="muted">Ranked matches with the eligibility problems spelled out, and a tailored application drafted in one click.</p>
+      <p class="muted">Matched programs with eligibility spelled out, and an application drafted from your own answers.</p>
     </div>
   </div>
 </section>
 
 <section class="section split">
-  <div class="photo" data-reveal><img src="/static/img/tea.jpg" alt="Workers harvesting tea on green hills" loading="lazy"></div>
+  <div class="photo" data-reveal><img src="/static/img/tea.jpg" alt="Tea pickers on a hillside estate" loading="lazy"></div>
   <div data-reveal>
     <p class="eyebrow">For founders</p>
-    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem)">Know where you stand before you apply</h2>
-    <p class="muted">Most applications fail on things nobody tells you: the wrong funder, a missing number, a budget that doesn't add up. SeedBridge spots them first.</p>
+    <h2>Know where you stand before you apply</h2>
+    <p class="muted">Most applications fail for reasons nobody tells you about: the wrong funder, a missing number, a budget that doesn't add up. SeedBridge points them out first.</p>
     <ul class="ticks">
-      <li>A readiness score judged against what funders expect at your stage</li>
-      <li>Live research on your market and competitors, with sources</li>
-      <li>Applications drafted from your own facts, never invented ones</li>
+      <li>A score judged against what funders expect at your stage</li>
+      <li>Research on your market and competitors, with sources</li>
+      <li>Drafts written from your facts, with gaps marked for you to fill</li>
     </ul>
-    <a class="btn" href="/signup?role=founder">Start for free</a>
+    <a class="btn" href="/signup?role=founder">Start your review</a>
   </div>
 </section>
 
@@ -90,55 +83,46 @@
   <div class="photo" data-reveal><img src="/static/img/sponsors.jpg" alt="A team listening to a presentation" loading="lazy"></div>
   <div data-reveal>
     <p class="eyebrow">For funders</p>
-    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem)">A shortlist, not a slush pile</h2>
-    <p class="muted">Publish your grant, fund, prize or accelerator. Every founder who shares their idea is checked against your criteria, and you see the best fits first, already reviewed.</p>
+    <h2>A shortlist instead of a pile</h2>
+    <p class="muted">Publish your grant, fund, prize or accelerator. Founders who choose to share are checked against your criteria, and you see the closest fits first, already reviewed.</p>
     <ul class="ticks">
-      <li>Eligibility checked automatically: stage, sector, country and ticket size</li>
+      <li>Stage, sector, country and ticket size checked for you</li>
       <li>A plain-English reason for every match</li>
-      <li>Shortlist, decline or request an intro in one click</li>
+      <li>Shortlist, decline or request an intro in one step</li>
     </ul>
-    <a class="btn" href="/signup?role=sponsor">List a program</a>
+    <a class="btn btn-ghost" href="/signup?role=sponsor">List a program</a>
   </div>
 </section>
 
 <section class="section">
-  <div class="section-title" data-reveal>
-    <p class="eyebrow">Built for real businesses</p>
-    <h2>Every stage, every kind of founder</h2>
+  <div class="section-intro" data-reveal>
+    <p class="eyebrow">Who it's for</p>
+    <h2>Every stage, every kind of business</h2>
   </div>
   <div class="stories" data-stagger>
-    <article class="story glass">
+    <article class="story">
       <img class="cover" src="/static/img/tea.jpg" alt="" loading="lazy">
-      <div class="body">
-        <span class="chip brand">Pre-seed</span>
-        <h3 style="margin-top:10px">Agritech in the dry zone</h3>
-        <p class="muted quote">An irrigation pilot gets matched to a climate grant, with the impact numbers the panel scores on.</p>
-      </div>
+      <div class="body"><span class="chip brand">Pre-seed</span><h3 style="margin-top:12px">An agritech pilot</h3>
+        <p>Matched to a climate grant, with the impact figures the panel scores on.</p></div>
     </article>
-    <article class="story glass">
+    <article class="story">
       <img class="cover" src="/static/img/cafe.jpg" alt="" loading="lazy">
-      <div class="body">
-        <span class="chip brand">Live business</span>
-        <h3 style="margin-top:10px">A café ready to grow</h3>
-        <p class="muted quote">A trading business finds growth finance that fits its cash flow, not venture capital it doesn't need.</p>
-      </div>
+      <div class="body"><span class="chip brand">Live business</span><h3 style="margin-top:12px">A café ready to expand</h3>
+        <p>Pointed to growth finance that suits its cash flow, rather than venture capital it doesn't need.</p></div>
     </article>
-    <article class="story glass">
+    <article class="story">
       <img class="cover" src="/static/img/pitch.jpg" alt="" loading="lazy">
-      <div class="body">
-        <span class="chip brand">Seed</span>
-        <h3 style="margin-top:10px">Fintech with traction</h3>
-        <p class="muted quote">Growing revenue meets a seed fund looking for exactly that, with the application tailored to its criteria.</p>
-      </div>
+      <div class="body"><span class="chip brand">Seed</span><h3 style="margin-top:12px">A fintech with revenue</h3>
+        <p>Introduced to a seed fund looking for exactly that traction, with a tailored application.</p></div>
     </article>
   </div>
 </section>
 
-<section class="cta-band glass" data-reveal>
-  <h2>Ready to see how fundable your idea is?</h2>
-  <p class="muted">It's free, it takes a few minutes, and you choose who sees your idea.</p>
-  <div class="cta-row" style="justify-content:center">
-    <a class="btn btn-lg" href="/signup?role=founder">Get my free review</a>
+<section class="cta-band" data-reveal>
+  <div>
+    <h2>See how fundable your idea is</h2>
+    <p>Free, about ten minutes, and you decide who sees your idea.</p>
   </div>
+  <a class="btn btn-lg" href="/signup?role=founder">Get a free review</a>
 </section>
 {% endblock %}

@@ -3,12 +3,12 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <p class="eyebrow"><a href="/ideas/{{ idea.id }}">{{ idea.title }}</a></p>
+    <p class="crumb"><a href="/ideas/{{ idea.id }}">{{ idea.title }}</a> / Behind the AI</p>
     <h1>Behind the AI</h1>
     <p class="muted" style="margin:0">Every model call made for this idea: NVIDIA Nemotron models on Nebius Token Factory, Tavily web search and RAG over {{ kb_chunks }} knowledge-base sections.</p>
   </div>
 </div>
-<section class="glass card scroll-x">
+<section class="card scroll-x">
   <table class="table">
     <thead><tr><th>Step</th><th>Model</th><th class="num">Time</th><th class="num">Tokens in / out</th><th class="num">Cost (USD)</th><th></th></tr></thead>
     <tbody>

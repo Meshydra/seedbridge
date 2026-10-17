@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
   org TEXT,
   password_hash TEXT NOT NULL,
   avatar_path TEXT, bio TEXT, website TEXT,
+  first_name TEXT, last_name TEXT, job_title TEXT, phone TEXT, location TEXT,
+  visibility TEXT NOT NULL DEFAULT 'public', connections_json TEXT,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS ideas (
@@ -91,7 +93,9 @@ def connect():
 
 # Columns added after the first release; added in place so existing databases keep working.
 MIGRATIONS = {
-    "users": ["avatar_path TEXT", "bio TEXT", "website TEXT"],
+    "users": ["avatar_path TEXT", "bio TEXT", "website TEXT", "first_name TEXT", "last_name TEXT",
+              "job_title TEXT", "phone TEXT", "location TEXT", "visibility TEXT NOT NULL DEFAULT 'public'",
+              "connections_json TEXT"],
     "ideas": ["product_status TEXT", "research_json TEXT"],
 }
 

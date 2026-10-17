@@ -1,31 +1,35 @@
 {% extends "base.html" %}
 {% block title %}{{ idea.title }} · SeedBridge{% endblock %}
 {% block page %}idea{% endblock %}
+{% from "_icons.html" import check %}
 {% block content %}
+{% set private = idea.founder_visibility == 'private' %}
+{% set conns = idea.founder_connections | loads({}) %}
 {% set review = idea.review_json | loads({}) %}
 {% set profile = idea.profile_json | loads({}) %}
 {% set market = idea.research_json | loads(none) %}
 {% set concerns = match.concerns | loads([]) %}
 <div class="page-head" data-reveal>
-  <div class="idea-head">
-    <img class="avatar xl" src="/u/{{ idea.user_id }}/avatar" alt="">
+  <div class="head-id">
+    {% if private %}<span class="avatar xl" style="display:block"></span>{% else %}<img class="avatar xl" src="/u/{{ idea.user_id }}/avatar" alt="">{% endif %}
     <div>
-      <p class="eyebrow"><a href="/programs/{{ p.id }}">{{ p.name }}</a></p>
+      <p class="crumb"><a href="/programs/{{ p.id }}">{{ p.name }}</a> / Matched founder</p>
       <h1>{{ idea.title }}</h1>
       <p class="muted" style="margin:0">{{ idea.one_liner or '' }}</p>
       <div class="chips"><span class="chip brand">{{ idea.stage }}</span><span class="chip">{{ idea.sector }}</span><span class="chip">{{ idea.country }}</span><span class="chip">Asking {{ idea.ask_usd | money }}</span></div>
-      <p class="small muted" style="margin:0">by {{ idea.founder_name }}</p>
+      <p class="small muted" style="margin:12px 0 0">{% if private %}Founder details are private until they apply to you.{% else %}{{ idea.founder_name }}{% if idea.founder_title %}, {{ idea.founder_title }}{% endif %}{% if idea.founder_location %} · {{ idea.founder_location }}{% endif %}
+        {% for k, label in [('linkedin', 'LinkedIn'), ('github', 'GitHub'), ('google', 'Google')] if k in conns %}<span class="chip verified" style="margin-left:6px">{{ check() }} {{ label }}</span>{% endfor %}{% endif %}</p>
     </div>
   </div>
   {% with score = match.fit_score %}{% include "_fit.html" %}{% endwith %}
 </div>
-<section class="glass card" data-reveal>
+<section class="card" data-reveal>
   <h2>Why they fit {{ p.name }}</h2>
   <p>{{ match.reason }}</p>
   {% if concerns %}<div class="concerns">{% for c in concerns %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
 </section>
-{% if review %}<section class="glass card" data-reveal>{% include "_review.html" %}</section>{% endif %}
-<section class="glass card" data-reveal>
+{% if review %}<section class="card" data-reveal>{% include "_review.html" %}</section>{% endif %}
+<section class="card" data-reveal>
   <h2>In their words</h2>
   <dl class="kv">
     <dt>Summary</dt><dd>{{ profile.summary }}</dd>

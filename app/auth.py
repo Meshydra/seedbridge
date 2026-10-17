@@ -27,7 +27,7 @@ def check_password(password: str, stored: str) -> bool:
 
 def current_user(request: Request):
     uid = request.session.get("uid")
-    return db.one("SELECT id, email, name, role, org FROM users WHERE id = ?", uid) if uid else None
+    return db.one("SELECT id, email, name, first_name, role, org, visibility FROM users WHERE id = ?", uid) if uid else None
 
 
 class LoginRequired(Exception):

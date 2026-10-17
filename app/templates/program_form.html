@@ -2,13 +2,13 @@
 {% block title %}List a program · SeedBridge{% endblock %}
 {% block page %}form{% endblock %}
 {% block content %}
-<div class="wizard">
+<div class="narrow">
   <div data-reveal>
-    <p class="eyebrow">New program</p>
+    <p class="crumb"><a href="/dashboard">Programs</a> / New</p>
     <h1>Tell founders what you fund</h1>
     <p class="muted">The more specific you are, the better your matches.</p>
   </div>
-  <form method="post" action="/programs/new" class="glass card" data-reveal>
+  <form method="post" action="/programs/new" class="card" data-reveal>
     <div class="row-2">
       <label>Program name<input name="name" required placeholder="e.g. Climate Resilience Micro-Grant"></label>
       <label>Type<select name="kind">{% for k in config.PROGRAM_KINDS %}<option>{{ k }}</option>{% endfor %}</select></label>
@@ -23,10 +23,10 @@
     </div>
     <label>Countries<input name="countries" placeholder="Any country">
       <span class="hint">Comma-separated, or leave blank for any country.</span></label>
-    <div class="checks"><span class="label">Funding stages you back <span class="hint" style="display:inline">(none selected = any)</span></span>
+    <div class="checks"><span class="label">Funding stages you back <span class="faint">(none selected means any)</span></span>
       {% for s in config.STAGES %}<label class="check"><input type="checkbox" name="stages" value="{{ s }}"> {{ s }}</label>{% endfor %}
     </div>
-    <div class="checks"><span class="label">Sectors <span class="hint" style="display:inline">(none selected = any)</span></span>
+    <div class="checks"><span class="label">Sectors <span class="faint">(none selected means any)</span></span>
       {% for s in config.SECTORS %}<label class="check"><input type="checkbox" name="sectors" value="{{ s }}"> {{ s }}</label>{% endfor %}
     </div>
     <button class="btn btn-lg">Publish and find founders</button>

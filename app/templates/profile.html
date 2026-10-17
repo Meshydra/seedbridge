@@ -1,26 +1,118 @@
 {% extends "base.html" %}
+{% from "_icons.html" import provider_icon, check %}
 {% block title %}Profile · SeedBridge{% endblock %}
 {% block page %}profile{% endblock %}
 {% block content %}
-<div class="wizard">
-  <form method="post" action="/profile" enctype="multipart/form-data" class="glass card" data-pop>
-    <div class="profile-card" style="margin-bottom:22px">
-      <img class="avatar xl {{ 'square' if me.role == 'sponsor' }}" src="/u/{{ me.id }}/avatar?{{ range(1000) | random }}" alt="" data-avatar-preview>
-      <div>
-        <h1 style="margin:0">{{ me.name }}</h1>
-        <p class="muted" style="margin:0">{{ me.email }} · {{ 'Founder' if me.role == 'founder' else 'Funder' }}</p>
-        <label class="btn btn-ghost btn-small" style="margin:12px 0 0;display:inline-flex">{{ 'Change logo' if me.role == 'sponsor' else 'Change photo' }}
-          <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" hidden data-avatar-input></label>
-        {% if me.avatar_path %}<label class="check" style="margin:12px 0 0 6px"><input type="checkbox" name="remove_photo"> Remove</label>{% endif %}
+{% set funder = me.role == 'sponsor' %}
+<div class="page-head" data-reveal>
+  <div>
+    <p class="crumb">Account</p>
+    <h1>Profile</h1>
+    <p class="muted" style="margin:0">{{ 'How founders see your organisation.' if funder else 'This is what funders see when you share an idea or apply.' }}</p>
+  </div>
+</div>
+
+<div class="settings">
+  <aside class="card profile-side" data-reveal>
+    <img class="avatar xl {{ 'square' if funder }}" src="/u/{{ me.id }}/avatar?{{ range(10000) | random }}" alt="" data-avatar-preview>
+    <h2>{{ me.name }}</h2>
+    <p class="role">{{ me.job_title or ('Funder' if funder else 'Founder') }}{% if me.org %} · {{ me.org }}{% endif %}</p>
+    <div class="badges">
+      <span class="chip {{ 'brand' if me.visibility == 'public' else '' }}">{{ 'Public profile' if me.visibility == 'public' else 'Private profile' }}</span>
+      {% for key, label in providers.items() if key in me.connections %}
+      <span class="chip verified">{{ check() }} {{ label }}</span>
+      {% endfor %}
+    </div>
+    <dl>
+      {% if me.location %}<div><dt>Location</dt><dd>{{ me.location }}</dd></div>{% endif %}
+      <div><dt>Email</dt><dd>{{ me.email }}</dd></div>
+      {% if me.website %}<div><dt>Website</dt><dd><a href="{{ me.website }}" target="_blank" rel="noopener">{{ me.website.replace('https://', '').replace('http://', '') }}</a></dd></div>{% endif %}
+      <div><dt>Member since</dt><dd>{{ me.created_at[:10] }}</dd></div>
+    </dl>
+  </aside>
+
+  <div>
+    <form method="post" action="/profile" enctype="multipart/form-data" class="card" data-reveal>
+      <section class="set-section">
+        <div><h2>{{ 'Logo' if funder else 'Photo' }}</h2><p>{{ 'Square works best.' if funder else 'A clear, friendly headshot builds trust with funders.' }}</p></div>
+        <div class="photo-row">
+          <img class="avatar lg {{ 'square' if funder }}" src="/u/{{ me.id }}/avatar" alt="">
+          <label class="btn btn-ghost btn-small" style="margin:0">Upload new
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" hidden data-avatar-input></label>
+          {% if me.avatar_path %}<label class="check" style="margin:0"><input type="checkbox" name="remove_photo"> Remove</label>{% endif %}
+          <span class="hint" style="margin:0">PNG or JPG, up to 3 MB</span>
+        </div>
+      </section>
+
+      <section class="set-section">
+        <div><h2>Personal details</h2><p>Your name appears on applications you send.</p></div>
+        <div>
+          <div class="row-2">
+            <label>First name<input name="first_name" required value="{{ me.first_name or '' }}" autocomplete="given-name"></label>
+            <label>Last name<input name="last_name" value="{{ me.last_name or '' }}" autocomplete="family-name"></label>
+          </div>
+          <div class="row-2">
+            <label>Email<input type="email" name="email" required value="{{ me.email }}" autocomplete="email"></label>
+            <label>Phone <span class="faint">(optional)</span><input type="tel" name="phone" value="{{ me.phone or '' }}" autocomplete="tel"></label>
+          </div>
+          <label style="margin-bottom:0">Location<input name="location" value="{{ me.location or '' }}" autocomplete="address-level2"></label>
+        </div>
+      </section>
+
+      <section class="set-section">
+        <div><h2>{{ 'Organisation' if funder else 'Company' }}</h2><p>{{ 'Shown on every program you list.' if funder else 'Leave blank if you haven’t registered a company yet.' }}</p></div>
+        <div>
+          <div class="row-2">
+            <label>{{ 'Organisation name' if funder else 'Company name' }}<input name="org" value="{{ me.org or '' }}" autocomplete="organization" {{ 'required' if funder }}></label>
+            <label>Your role<input name="job_title" value="{{ me.job_title or '' }}" autocomplete="organization-title"></label>
+          </div>
+          <label style="margin-bottom:0">Website<input type="url" name="website" value="{{ me.website or '' }}" autocomplete="url"></label>
+        </div>
+      </section>
+
+      <section class="set-section">
+        <div><h2>{{ 'About the organisation' if funder else 'About you' }}</h2><p>{{ 'What you fund and why.' if funder else 'Your background and why you’re building this. Two or three sentences is plenty.' }}</p></div>
+        <label style="margin-bottom:0"><span class="counter" data-counter-for="bio">{{ (me.bio or '') | length }} / 600</span>Bio
+          <textarea name="bio" rows="5" maxlength="600" data-counted="bio">{{ me.bio or '' }}</textarea></label>
+      </section>
+
+      <section class="set-section">
+        <div><h2>Visibility</h2><p>{{ 'Who can see your organisation profile.' if funder else 'Applies to your profile. You can still hide individual ideas.' }}</p></div>
+        <div class="radio-cards">
+          <label class="option"><input type="radio" name="visibility" value="public" {{ 'checked' if me.visibility != 'private' }}>
+            <span style="margin:0"><b>Public</b><span>{{ 'Founders can see who you are and what you fund.' if funder else 'Funders matched to your ideas see your name, photo and profile.' }}</span></span></label>
+          <label class="option"><input type="radio" name="visibility" value="private" {{ 'checked' if me.visibility == 'private' }}>
+            <span style="margin:0"><b>Private</b><span>{{ 'Your organisation is only shown to founders who apply to you.' if funder else 'Funders see your idea anonymously until you apply to them.' }}</span></span></label>
+        </div>
+      </section>
+
+      <div class="save-bar">
+        <a class="btn btn-quiet" href="/profile">Cancel</a>
+        <button class="btn">Save changes</button>
       </div>
-    </div>
-    <div class="row-2">
-      <label>Name<input name="name" required value="{{ me.name }}" autocomplete="name"></label>
-      <label>{{ 'Organisation' if me.role == 'sponsor' else 'Company' }}<input name="org" value="{{ me.org or '' }}" autocomplete="organization"></label>
-    </div>
-    <label>{{ 'About your organisation' if me.role == 'sponsor' else 'About you' }}<textarea name="bio" rows="3">{{ me.bio or '' }}</textarea></label>
-    <label>Website<input name="website" type="url" value="{{ me.website or '' }}" placeholder="https://"></label>
-    <button class="btn">Save profile</button>
-  </form>
+    </form>
+
+    <section class="card" id="connections" data-reveal>
+      <section class="set-section" style="padding:0">
+        <div><h2>Connected accounts</h2><p>Linking accounts shows funders a verified badge and saves you retyping your background.</p></div>
+        <div>
+          {% for key, label in providers.items() %}
+          {% set c = me.connections.get(key) %}
+          <div class="conn">
+            <div class="logo">{{ provider_icon(key) }}</div>
+            <div class="meta">
+              <b>{{ label }}</b>
+              {% if c %}<span class="ok">Connected as {{ c.handle }}</span>
+              {% else %}<span>{{ {'linkedin': 'Import your experience and show it on applications', 'github': 'Show the code behind your product', 'google': 'Sign in with Google'}[key] }}</span>{% endif %}
+            </div>
+            <form method="post" action="/profile/connect/{{ key }}">
+              <button class="btn btn-small {{ 'btn-danger' if c else 'btn-ghost' }}">{{ 'Disconnect' if c else 'Connect' }}</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </section>
+  </div>
 </div>
 {% endblock %}

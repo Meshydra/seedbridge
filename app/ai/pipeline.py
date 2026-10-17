@@ -138,22 +138,41 @@ _KEY_FIELDS = [("problem", "Problem"), ("solution", "Solution"), ("business_mode
                ("ask_usd", "Funding ask")]
 
 
+# Preview-mode wording: what an experienced reviewer would say, picked by how strong each answer is.
+_GAP_WHY = {
+    "Problem": "Panels score the problem first. Say who has it, how often, and what it costs them.",
+    "Solution": "Explain how it works in practice and why it beats what people do today.",
+    "Business model": "Say who pays, how much and how often. Funders need to see a path to income.",
+    "Team": "Name the people and the experience that makes you credible for this.",
+    "Traction": "Any evidence counts at this stage: interviews, a pilot, sign-ups or first sales.",
+    "Use of funds": "Split the money into two or three buckets, each tied to a milestone.",
+    "Funding ask": "State the exact amount; programs filter on ticket size.",
+}
+_STAGE_QUESTIONS = {
+    "Just an idea": ["How many potential customers have you spoken to, and what did they say?",
+                     "What is the cheapest test that would prove people want this?"],
+    "Pre-seed": ["Who are your first five customers, and have any of them paid?",
+                 "What will the prototype prove in the next six months?"],
+    "Seed": ["What is your month-on-month growth, and what drives it?",
+             "What does it cost to win a customer, and how long do they stay?"],
+    "Series A+": ["Which channel will scale, and what are its unit economics today?",
+                  "Who joins the management team with this round?"],
+    "Live business": ["What were revenue and margin over the last 12 months?",
+                      "Which growth project does this money fund, and how is it repaid?"],
+}
+
+
 def _demo_gaps(idea):
     missing = []
     for key, label in _KEY_FIELDS:
         value = idea.get(key)
-        if not value:
-            missing.append({"field": label, "why": f"Panels score {label.lower()} directly; it is blank."})
-        elif isinstance(value, str) and len(value) < 60:
-            missing.append({"field": label, "why": "Too short to judge; add specifics and numbers."})
-    questions = [
-        "Who exactly is the first paying customer, and how many of them are there in your market?",
-        "What have you already tested, and what did the result show?",
-        "How will this funding change your numbers in 12 months?",
-    ]
+        if not value or (isinstance(value, str) and len(value) < 60):
+            missing.append({"field": label, "why": _GAP_WHY[label]})
+    questions = list(_STAGE_QUESTIONS.get(idea.get("stage"), _STAGE_QUESTIONS["Pre-seed"]))
+    questions.append("How will this funding change your numbers in 12 months?")
     if not idea.get("team"):
-        questions.insert(0, "Who is on the team and why are you the people to build this?")
-    return {"completeness": max(15, 100 - 14 * len(missing)), "missing": missing, "questions": questions[:5]}
+        questions.insert(0, "Who is on the team, and why are you the right people to build this?")
+    return {"completeness": max(15, 100 - 14 * len(missing)), "missing": missing, "questions": questions[:4]}
 
 
 # ---------------------------------------------------------------- step 3: vision
@@ -164,9 +183,8 @@ VISION_SYSTEM = """You read pitch-deck slides. Return ONLY JSON:
 
 
 def _demo_vision(idea):
-    return {"slide_summary": "Demo mode: the slide was stored but not read. With a Nebius key, "
-                             "Nemotron 3.5 Super VL extracts its claims and numbers.",
-            "claims": [], "numbers": [], "consistency": "not checked in demo mode"}
+    return {"slide_summary": "Your slide is saved and will be read alongside your answers in the next full review.",
+            "claims": [], "numbers": [], "consistency": "not checked yet"}
 
 
 # ---------------------------------------------------------------- step 4: review
@@ -183,19 +201,50 @@ Return ONLY JSON:
 "based_on": [titles of the reference guidance sections you relied on]}"""
 
 
+_DIM_NOTES = {
+    # name: (weak comment, solid comment, strength line, risk line, fix line)
+    "Problem": ("Needs a sharper picture of who is affected and how often.",
+                "Clear, specific and grounded in a real group of people.",
+                "The problem is concrete and easy for a panel to picture.",
+                "The problem isn't yet tied to a specific group or a cost.",
+                "Open with one sentence naming who has the problem, how often, and what it costs them."),
+    "Solution": ("Explain how it works day to day and why it beats current options.",
+                 "Practical and well matched to the problem.",
+                 "The solution fits the problem and looks practical to deliver.",
+                 "It's not yet clear why this beats what people do today.",
+                 "Add a short before-and-after comparison for one customer."),
+    "Market": ("No sense yet of how many customers there are or what they'd pay.",
+               "A credible view of who pays and how.",
+               "There is a clear paying customer in a reachable market.",
+               "Market size is missing, so the upside is hard to judge.",
+               "Add a bottom-up market size: reachable customers x price x frequency."),
+    "Team": ("Say who is building this and why they are credible.",
+             "Relevant experience for this problem.",
+             "The team has directly relevant experience.",
+             "The team is thin or not described, which weighs heavily at this stage.",
+             "Name each founder's role and one fact that shows they can deliver."),
+    "Traction": ("No evidence of demand yet.",
+                 "Real evidence of demand, with numbers.",
+                 "There is measurable traction, which lowers the risk of the ask.",
+                 "Little evidence yet that customers want this.",
+                 "Run a small paid pilot or collect letters of intent before applying widely."),
+    "Financial ask": ("The ask isn't tied to milestones.",
+                      "Sized sensibly and tied to what it buys.",
+                      "The ask is sensibly sized for the stage.",
+                      "It's unclear what the money achieves.",
+                      "Break the ask into two or three milestones, each with a cost and a date."),
+}
+
+
 def _demo_review(idea, gaps, refs=()):
     def score(key, base=4):
-        v = idea.get(key) or ""
-        v = str(v)
-        return max(1, min(9, base + len(v) // 80 + (1 if re.search(r"\d", v) else 0)))
-    dims = [
-        {"name": "Problem", "score": score("problem"), "comment": "Clear when it names who suffers and how often."},
-        {"name": "Solution", "score": score("solution"), "comment": "Show why this beats what people do today."},
-        {"name": "Market", "score": score("one_liner", 3), "comment": "Add a bottom-up market size."},
-        {"name": "Team", "score": score("team", 3), "comment": "Relevant experience carries a lot of weight."},
-        {"name": "Traction", "score": score("traction", 2), "comment": "Pilots, sign-ups or revenue de-risk the ask."},
-        {"name": "Financial ask", "score": score("use_of_funds", 3), "comment": "Tie each dollar to a milestone."},
-    ]
+        v = str(idea.get(key) or "")
+        if not v:
+            return 2
+        return max(2, min(9, base + len(v) // 50 + (1 if re.search(r"\d", v) else 0)))
+    raw = [("Problem", score("problem")), ("Solution", score("solution")), ("Market", score("business_model", 3)),
+           ("Team", score("team")), ("Traction", score("traction", 3)), ("Financial ask", score("use_of_funds", 3))]
+    dims = [{"name": n, "score": sc, "comment": _DIM_NOTES[n][1 if sc >= 6 else 0]} for n, sc in raw]
     overall = round(sum(d["score"] for d in dims) / len(dims) * 10 * 0.6 + gaps["completeness"] * 0.4)
     stage = idea.get("stage")
     best = {"Just an idea": ["Grant", "Prize / competition"],
@@ -203,16 +252,27 @@ def _demo_review(idea, gaps, refs=()):
             "Seed": ["Equity investment", "Accelerator"],
             "Series A+": ["Equity investment"],
             "Live business": ["Loan / debt", "Grant", "Equity investment"]}.get(stage, ["Grant", "Accelerator"])
-    weakest = sorted(dims, key=lambda d: d["score"])[:3]
+    ranked = sorted(dims, key=lambda d: -d["score"])
+    weakest = ranked[::-1][:3]
+    if overall >= 75:
+        verdict = "Strong application, ready for well-matched programs."
+    elif overall >= 55:
+        verdict = "Promising. Close a few gaps before you apply."
+    else:
+        verdict = "Early, with potential. Build evidence before approaching funders."
     return {
         "overall": overall,
-        "verdict": "Promising but needs evidence before an investor meeting." if overall < 70
-                   else "Ready to send to well-matched programs.",
+        "verdict": verdict,
         "dimensions": dims,
-        "strengths": [f"{d['name']} is the strongest part of the application" for d in
-                      sorted(dims, key=lambda d: -d["score"])[:3]],
-        "risks": [f"{d['name']} is thin ({d['score']}/10)" for d in weakest],
-        "improvements": [f"Strengthen {d['name'].lower()}: {d['comment']}" for d in weakest],
+        "strengths": [_DIM_NOTES[d["name"]][2] for d in ranked[:3] if d["score"] >= 5] or
+                     ["The idea is described clearly enough to review."],
+        "risks": ([_DIM_NOTES[d["name"]][3] for d in weakest if d["score"] <= 5] + [
+            "Competition isn't addressed: say why a larger player can't copy this quickly.",
+            ("Retention and churn aren't shown yet; investors at this stage will ask."
+             if dict(raw)["Traction"] >= 6 else
+             "Key assumptions (price, uptake) haven't been tested with paying customers yet."),
+            "Execution risk: the plan depends on a small team delivering several things at once."])[:3],
+        "improvements": [_DIM_NOTES[d["name"]][4] for d in weakest],
         "best_fit": best,
         "based_on": [r["title"] for r in refs][:3],
     }

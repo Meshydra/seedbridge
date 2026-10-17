@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-head" data-reveal>
   <div>
-    <p class="eyebrow"><a href="/dashboard">My programs</a></p>
+    <p class="crumb"><a href="/dashboard">Programs</a> / {{ p.name }}</p>
     <h1>{{ p.name }}</h1>
     <div class="chips"><span class="chip brand">{{ p.kind }}</span><span class="chip">{{ p.min_usd | money }}–{{ p.max_usd | money }}</span>{% if p.deadline %}<span class="chip">Closes {{ p.deadline }}</span>{% endif %}
       {% for s in (p.stages or 'Any stage').split(', ') %}<span class="chip">{{ s }}</span>{% endfor %}<span class="chip">{{ p.countries or 'Any country' }}</span></div>
@@ -12,7 +12,7 @@
 </div>
 
 {% if apps %}
-<section class="glass card" data-reveal>
+<section class="card" data-reveal>
   <h2>Applications</h2>
   <div data-stagger>
   {% for a in apps %}
@@ -26,7 +26,7 @@
 </section>
 {% endif %}
 
-<section class="glass card" data-reveal>
+<section class="card" data-reveal>
   <div class="section-head"><div><h2 style="margin:0">Founders who fit</h2><p class="muted small" style="margin:0">Best fits first. Only founders who chose to share appear here.</p></div></div>
   {% if matches %}
   <div data-stagger>
@@ -37,7 +37,7 @@
       {% with score = m.fit_score %}{% include "_fit.html" %}{% endwith %}
       <div>
         <h3>{{ m.title }}</h3>
-        <div class="who-row"><img class="avatar sm" src="/u/{{ m.founder_id }}/avatar" alt="">{{ m.founder_name }} · {{ m.stage }} · {{ m.country }} · asking {{ m.ask_usd | money }}</div>
+        <div class="who-row">{% if m.founder_visibility == 'private' %}<span class="avatar sm" style="display:inline-block"></span>Private founder{% else %}<img class="avatar sm" src="/u/{{ m.founder_id }}/avatar" alt="">{{ m.founder_name }}{% endif %} · {{ m.stage }} · {{ m.country }} · asking {{ m.ask_usd | money }}</div>
         <p>{{ m.reason }}</p>
         {% if concerns %}<div class="concerns">{% for c in concerns %}<span class="chip warn">{{ c }}</span>{% endfor %}</div>{% endif %}
       </div>

@@ -5,6 +5,7 @@
 
 All organisations below are fictional ("Example ...") so nobody mistakes them for real funders.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -71,6 +72,35 @@ FOUNDERS = [
         business_model="", team="", traction="", use_of_funds="Tablets and content.")),
 ]
 
+# Profile details for the demo accounts (fictional people and organisations).
+PROFILES = {
+    "founder@example.test": dict(
+        org="PaddySense", job_title="Co-founder & CEO", location="Anuradhapura, Sri Lanka", website="https://paddysense.example",
+        bio="Agricultural engineer. Six years designing irrigation schedules for the dry zone before starting "
+            "PaddySense to put the same advice in every farmer's pocket.",
+        connections={"linkedin": "linkedin.com/in/kasun-jayawardena", "google": "founder@example.test"}),
+    "founder2@example.test": dict(
+        org="LedgerLite Technologies", job_title="Founder & CEO", location="Colombo, Sri Lanka", website="https://ledgerlite.example",
+        bio="Former product manager at a payments company. Building the simplest possible bookkeeping for "
+            "small shops that still keep their accounts on paper.",
+        connections={"linkedin": "linkedin.com/in/ruwani-dissanayake", "github": "github.com/ruwanid",
+                     "google": "founder2@example.test"}),
+    "founder3@example.test": dict(
+        job_title="Teacher and founder", location="Batticaloa, Sri Lanka", visibility="private",
+        bio="Secondary science teacher exploring how recorded lessons could reach rural classrooms."),
+    "grants@example-green.test": dict(
+        job_title="Grants Manager", location="Colombo, Sri Lanka", website="https://greenfutures.example",
+        bio="We fund early ventures that help farmers and coastal communities adapt to a changing climate.",
+        connections={"linkedin": "linkedin.com/company/example-green-futures"}),
+    "invest@example-seed.test": dict(
+        job_title="Partner", location="Colombo and Singapore", website="https://seedpartners.example",
+        bio="First institutional cheque for software businesses in South Asia with regional ambitions.",
+        connections={"linkedin": "linkedin.com/in/daniel-fernando"}),
+    "programs@example-launchpad.test": dict(
+        job_title="Program Director", location="Kandy, Sri Lanka", website="https://launchpad.example",
+        bio="A 12-week accelerator and annual prize for women-led and social-impact startups."),
+}
+
 
 def main():
     if "--reset" in sys.argv and config.DB_PATH.exists():
@@ -99,6 +129,15 @@ def main():
         print(f"Reviewing {idea['title']} ...", flush=True)
         pipeline.process_idea(idea_id)
         print("  ->", db.one("SELECT status FROM ideas WHERE id=?", idea_id)["status"])
+
+    for email, p in PROFILES.items():
+        first, last = db.one("SELECT name FROM users WHERE email=?", email)["name"].split(" ", 1)
+        conns = {k: {"handle": v, "since": "2026-10-01"} for k, v in p.get("connections", {}).items()}
+        if p.get("org"):
+            db.run("UPDATE users SET org=? WHERE email=?", p["org"], email)
+        db.run("UPDATE users SET first_name=?, last_name=?, job_title=?, location=?, bio=?, website=?, visibility=?,"
+               " connections_json=? WHERE email=?", first, last, p.get("job_title"), p.get("location"), p.get("bio"),
+               p.get("website"), p.get("visibility", "public"), json.dumps(conns), email)
 
     print(f"\nDone ({'demo mode' if config.DEMO_MODE else 'live Nebius models'}). "
           f"Log in as founder@example.test or grants@example-green.test; password in scripts/seed.py.")

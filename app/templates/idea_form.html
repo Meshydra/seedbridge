@@ -2,17 +2,17 @@
 {% block title %}{{ 'Edit idea' if idea.id else 'New idea' }} · SeedBridge{% endblock %}
 {% block page %}wizard{% endblock %}
 {% block content %}
-<div class="wizard">
+<div class="narrow">
   <div class="wizard-head" data-reveal>
     <div>
-      <p class="eyebrow">{{ 'Edit your idea' if idea.id else 'New idea' }}</p>
+      <p class="crumb"><a href="/dashboard">Ideas</a> / {{ 'Edit' if idea.id else 'New idea' }}</p>
       <h1>{{ 'Update your idea' if idea.id else "Let's hear about your idea" }}</h1>
     </div>
-    <span class="chip" data-step-label>Step 1 of 5</span>
+    <span class="faint small tabular" data-step-label>Step 1 of 5</span>
   </div>
-  <div class="progress-track" aria-hidden="true"><i data-progress></i></div>
+  <div class="step-dots" aria-hidden="true" data-dots><i class="on"></i><i></i><i></i><i></i><i></i></div>
 
-  <form method="post" action="{{ action }}" enctype="multipart/form-data" class="glass card" data-wizard>
+  <form method="post" action="{{ action }}" enctype="multipart/form-data" class="card" data-wizard>
     <section class="wstep on" data-wstep>
       <h2>The basics</h2>
       <p class="muted">Plain language is perfect. You can change any of this later.</p>
@@ -28,14 +28,14 @@
     <section class="wstep" data-wstep>
       <h2>Where are you right now?</h2>
       <p class="muted">This decides which funders you're eligible for, so pick the closest fit.</p>
-      <span class="checks label" style="display:block;font-weight:700;font-size:.92rem">Funding stage</span>
+      <span class="field-label">Funding stage</span>
       <div class="options">
         {% for s in config.STAGES %}
         <label class="option"><input type="radio" name="stage" value="{{ s }}" required {{ 'checked' if idea.stage == s or (not idea.stage and loop.first) }}>
           <b>{{ s }}</b><span>{{ config.STAGE_HINTS[s] }}</span></label>
         {% endfor %}
       </div>
-      <span style="display:block;font-weight:700;font-size:.92rem">Is your product live?</span>
+      <span class="field-label">Is your product live?</span>
       <div class="options">
         {% for s in config.PRODUCT_STATUS %}
         <label class="option"><input type="radio" name="product_status" value="{{ s }}" {{ 'checked' if idea.product_status == s or (not idea.product_status and loop.first) }}><b>{{ s }}</b></label>

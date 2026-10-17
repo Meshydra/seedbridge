@@ -21,7 +21,7 @@ Early founders, especially outside the big startup hubs, don't know which fundin
 - A **market snapshot** from live web research: competitors, market size and sources.
 - **Matched funders**, ranked by fit, with eligibility problems flagged before you waste time applying.
 - **One-click applications** tailored to each funder and written only from your own facts. Missing ones are marked `[ADD: …]`.
-- A profile photo and full control over whether funders can see your idea.
+- A full profile (photo, name, company, role, bio), public or private visibility, and connected LinkedIn, GitHub and Google accounts. Account linking is a demo flow for now; OAuth comes next.
 
 **Funders**
 - List a grant, equity fund, prize, accelerator or loan, with stages, sectors, countries and ticket size.
@@ -69,7 +69,7 @@ uvicorn app.main:app --port 8110
 
 Then open http://localhost:8110.
 
-- **No key yet?** The app runs in *preview mode*: every model call is answered locally by simple heuristics, so the whole product can be clicked through. A small "Preview mode" badge shows when this is on.
+- **No key yet?** The app runs in *preview mode*: every model call is answered locally by simple rules, so the whole product can be clicked through. The `/trace` page marks those calls as "simulated".
 - **Check your models:** `python scripts/list_models.py` confirms every configured model is available to your key. Any step's model can be swapped through env vars (see `.env.example`).
 - **Demo logins:** founders `founder@example.test`, `founder2@example.test`, `founder3@example.test`; funders `grants@example-green.test`, `invest@example-seed.test`, `programs@example-launchpad.test`. The password is `DEMO_PASSWORD` in [`scripts/seed.py`](scripts/seed.py). All organisations are fictional.
 

@@ -8,50 +8,48 @@
   <link rel="icon" href="/static/brand/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=5">
   <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body data-page="{% block page %}page{% endblock %}">
-  <div class="backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="topbar-inner glass">
-        <a class="brand" href="/"><img src="/static/brand/mark.svg" alt="">SeedBridge</a>
-        <nav>
-          {% if user %}
-            <a href="/dashboard" class="hide-sm">{{ 'My ideas' if user.role == 'founder' else 'My programs' }}</a>
-            {% if user.role == 'founder' %}<a class="btn btn-small" href="/ideas/new">New idea</a>{% else %}<a class="btn btn-small" href="/programs/new">New program</a>{% endif %}
-            <div class="menu" data-menu>
-              <button class="me btn-reset" aria-haspopup="true" aria-expanded="false" style="background:none;border:0;cursor:pointer;font:inherit">
-                <img class="avatar sm" src="/u/{{ user.id }}/avatar" alt=""><span>{{ user.name.split()[0] }}</span>
-              </button>
-              <div class="menu-pop glass" role="menu">
-                <a href="/profile" role="menuitem">Profile</a>
-                <a href="/dashboard" role="menuitem">{{ 'My ideas' if user.role == 'founder' else 'My programs' }}</a>
-                <form method="post" action="/logout"><button role="menuitem">Log out</button></form>
-              </div>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="/"><img src="/static/brand/mark.svg" alt="">SeedBridge</a>
+      <nav>
+        {% if user %}
+          <a href="/dashboard" class="hide-sm">{{ 'Ideas' if user.role == 'founder' else 'Programs' }}</a>
+          <a href="/profile" class="hide-sm">Profile</a>
+          {% if user.role == 'founder' %}<a class="btn btn-small" href="/ideas/new">New idea</a>{% else %}<a class="btn btn-small" href="/programs/new">New program</a>{% endif %}
+          <div class="menu" data-menu>
+            <button class="me" aria-haspopup="true" aria-expanded="false">
+              <img class="avatar sm" src="/u/{{ user.id }}/avatar" alt=""><span>{{ user.name.split()[0] }}</span>
+            </button>
+            <div class="menu-pop" role="menu">
+              <div class="who"><b>{{ user.name }}</b><br><span class="faint">{{ user.email }}</span></div>
+              <a href="/profile" role="menuitem">Profile and settings</a>
+              <a href="/dashboard" role="menuitem">{{ 'My ideas' if user.role == 'founder' else 'My programs' }}</a>
+              <form method="post" action="/logout"><button role="menuitem">Log out</button></form>
             </div>
-          {% else %}
-            <a href="/#how" class="hide-sm">How it works</a>
-            <a href="/#funders" class="hide-sm">For funders</a>
-            <a href="/login">Log in</a>
-            <a class="btn btn-small" href="/signup">Get started</a>
-          {% endif %}
-        </nav>
-      </div>
-    </header>
-  </div>
+          </div>
+        {% else %}
+          <a href="/#how" class="hide-sm">How it works</a>
+          <a href="/#funders" class="hide-sm">For funders</a>
+          <a href="/login">Log in</a>
+          <a class="btn btn-small" href="/signup">Get started</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
   <main class="wrap">
-    {% if flash %}<div class="flash" data-flash>{{ flash }}</div>{% endif %}
+    {% if flash %}<div class="flash" role="status" data-flash>{{ flash }}</div>{% endif %}
     {% block content %}{% endblock %}
   </main>
   <footer class="wrap footer">
     <a class="brand" href="/"><img src="/static/brand/mark.svg" alt="">SeedBridge</a>
-    <span>Reviews are guidance to strengthen your application, not funding decisions.</span>
+    <span>Reviews help you strengthen an application. Funders make their own decisions.</span>
   </footer>
-  {% if config.DEMO_MODE %}<div class="preview-pill glass" title="AI answers are simulated until an API key is added">Preview mode</div>{% endif %}
   <script src="https://cdn.jsdelivr.net/npm/motion@13.4.6/dist/motion.js"></script>
-  <script src="/static/app.js?v=4"></script>
+  <script src="/static/app.js?v=5"></script>
 </body>
 </html>
