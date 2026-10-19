@@ -28,6 +28,17 @@ Early founders, especially outside the big startup hubs, don't know which fundin
 - See the founders who fit, best first, each with a reason and the full review.
 - Applications arrive pre-reviewed. Shortlist, decline or request an intro; requesting an intro shares contact details with both sides.
 
+## Screenshots
+
+Captured from the seeded demo data (all organisations are fictional).
+
+| | |
+|---|---|
+| ![Landing page](docs/screenshots/1-landing.png) **Landing page.** One pitch for founders, one for funders. | ![Idea form](docs/screenshots/2-idea-form.png) **Five-step idea form.** Plain language, stage-aware. |
+| ![Readiness review](docs/screenshots/3-readiness-review.png) **Readiness review.** Score out of 100, six dimensions, strengths, risks and the three fixes that matter most, with the knowledge-base sections it was judged against. | ![Matched funders](docs/screenshots/4-matched-funders.png) **Funders that fit.** Ranked by fit, eligibility problems flagged, plus the questions a panel will ask. |
+| ![Application draft](docs/screenshots/5-application-draft.png) **One-click application.** Tailored to the funder, written only from the founder's facts. | ![Funder shortlist](docs/screenshots/6-funder-shortlist.png) **Funder view: founders who fit.** Best first, with the reason and any rule they break. |
+| ![Funder founder view](docs/screenshots/7-funder-founder-view.png) **Funder view: one founder.** Why they fit, plus the full review. | ![Behind the AI](docs/screenshots/8-behind-the-ai.png) **Behind the AI.** Every model call with model, latency, tokens and cost (here from preview mode, so marked "simulated"). |
+
 ## How it uses NVIDIA Nemotron on Nebius Token Factory
 
 Seven AI steps, each on the smallest model that does the job well. Only the deep judgement goes to Ultra.
